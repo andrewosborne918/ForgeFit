@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1348.69 372.72">
+  <defs>
+    <style>
+      .cls-1 {
+        font-family: InterV-Bold, 'Inter V';
+        font-size: 315px;
+        font-variation-settings: 'wght' 700, 'slnt' 0;
+        font-weight: 700;
+      }
+
+      .cls-2 {
+        fill: #11172b;
+        letter-spacing: 0em;
+      }
+
+      .cls-3, .cls-4, .cls-5, .cls-6, .cls-7 {
+        fill: #ff6f00;
+      }
+
+      .cls-4 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-5 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-6 {
+        letter-spacing: 0em;
+      }
+
+      .cls-7 {
+        letter-spacing: -.03em;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <text class="cls-1" transform="translate(0 272.04)"><tspan class="cls-5" x="0" y="0">F</tspan><tspan class="cls-6" x="171.71" y="0">o</tspan><tspan class="cls-7" x="365" y="0">r</tspan><tspan class="cls-3" x="485.7" y="0">ge</tspan><tspan class="cls-2" x="873.41" y="0">Fit</tspan><tspan class="cls-4" x="1265.7" y="0">.</tspan></text>
+  </g>
+</svg>

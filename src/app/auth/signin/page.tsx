@@ -1,21 +1,61 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth"
-import { app } from "@/lib/firebase"
+import { app, isFirebaseConfigured } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { BackgroundGrid } from "@/components/BackgroundGrid"
+import { Logo } from "@/components/Logo"
+
+// Prevent static generation for this page
+export const dynamic = 'force-dynamic'
 
 export default function SignInPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Don't render anything until component is mounted (prevents SSR issues)
+  if (!mounted) {
+    return null
+  }
+
+  // Show configuration error if Firebase is not properly configured
+  if (!isFirebaseConfigured) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center p-8">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Firebase Configuration Error</h1>
+          <p className="text-gray-600">
+            Firebase is not properly configured. Please check your environment variables.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!app) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground">
+            Firebase app not initialized. Please check your configuration.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   const auth = getAuth(app)
 
@@ -24,19 +64,37 @@ export default function SignInPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password)
       router.push("/dashboard")
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
   }
 
   const handleGoogle = async () => {
+    setLoading(true)
+    setError("") // Clear any previous errors
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider())
+      const provider = new GoogleAuthProvider()
+      provider.addScope('email')
+      provider.addScope('profile')
+      
+      await signInWithPopup(auth, provider)
       router.push("/dashboard")
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      console.error("❌ Google signin error:", err)
+      const error = err as { code?: string; message?: string }
+      if (error.code === 'auth/popup-closed-by-user') {
+        setError("Sign-in was cancelled")
+      } else if (error.code === 'auth/popup-blocked') {
+        setError("Popup was blocked by browser. Please allow popups and try again.")
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        setError("Another sign-in popup is already open")
+      } else {
+        setError((error as Error).message || "Failed to sign in with Google")
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -48,7 +106,7 @@ export default function SignInPage() {
       {/* Form Container */}
       <div className="relative z-10 w-full max-w-md space-y-8 p-8 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-2xl rounded-2xl border border-white/20 dark:border-slate-700/50">
         <div>
-          <img className="mx-auto h-12 w-auto" src="/images/Logo/forgefit-logo-orange.svg" alt="ForgeFit" />
+          <Logo className="mx-auto h-12 w-auto" width={150} height={48} alt="ForgeFit" />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 dark:text-white">
             Sign in to your account
           </h2>
@@ -90,11 +148,12 @@ export default function SignInPage() {
             <span className="px-2 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400">Or continue with</span>
           </div>
         </div>
-        <Button variant="outline" className="w-full flex justify-center py-2 px-4 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark" onClick={handleGoogle}>
+        <Button variant="outline" className="w-full flex justify-center py-2 px-4 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-dark" onClick={handleGoogle} disabled={loading}>
+          {loading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
           Sign in with Google
         </Button>
         <p className="mt-8 text-center text-sm text-slate-600 dark:text-slate-400">
-          Don\\'t have an account?{" "}
+          Don&apos;t have an account?{" "}
           <a className="font-medium text-primary dark:text-orange-400 hover:text-primary/90 dark:hover:text-orange-300 underline" href="/auth/signup">
             Sign Up
           </a>

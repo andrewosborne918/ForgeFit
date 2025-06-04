@@ -101,10 +101,10 @@ const getWeekStartDate = (date: Date) => {
 };
 
 // Common muscle groups for parsing - can be expanded
-const COMMON_MUSCLE_GROUPS = [
-  'chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'quadriceps', 'hamstrings', 
-  'glutes', 'core', 'abs', 'abdominals', 'calves', 'forearms', 'traps', 'lats', 'full body', 'upper body', 'lower body'
-];
+// const COMMON_MUSCLE_GROUPS = [
+//   'chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'quadriceps', 'hamstrings', 
+//   'glutes', 'core', 'abs', 'abdominals', 'calves', 'forearms', 'traps', 'lats', 'full body', 'upper body', 'lower body'
+// ];
 
 export default function AnalyticsPage() {
   const { user } = useAppContext();
@@ -131,6 +131,11 @@ export default function AnalyticsPage() {
       const fetchWorkoutLogs = async () => {
         setLoading(true);
         try {
+          if (!app) {
+            console.error("Firebase app not initialized");
+            setLoading(false);
+            return;
+          }
           const db = getFirestore(app);
           const logsCollectionRef = collection(db, `users/${user.uid}/logs`);
           const q = query(logsCollectionRef, orderBy("timestamp", "asc"));
@@ -433,7 +438,7 @@ export default function AnalyticsPage() {
                   if (view === 'month') {
                     const isActiveDay = activeDates.some(activeDate => isSameDay(activeDate, date));
                     const isToday = isSameDay(date, new Date());
-                    let classes = [];
+                    const classes = [];
                     if (isActiveDay) classes.push('active-day');
                     if (isToday) classes.push('today-marker');
                     return classes.length > 0 ? classes.join(' ') : null;

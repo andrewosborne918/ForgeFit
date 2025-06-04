@@ -1,8 +1,8 @@
 import { type Config } from "tailwindcss"
-import { fontFamily } from "tailwindcss/defaultTheme"
+import defaultTheme from "tailwindcss/defaultTheme"
 
 const config: Config = {
-  darkMode: ["class"],
+  darkMode: "class",
   content: [
     "./src/app/**/*.{ts,tsx}",
     "./src/components/**/*.{ts,tsx}",
@@ -17,7 +17,7 @@ const config: Config = {
         accent: "#030816",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", ...fontFamily.sans],
+        sans: ["var(--font-geist-sans)", ...defaultTheme.fontFamily.sans],
       },
     },
   },

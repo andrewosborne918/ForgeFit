@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import {
   getAuth,
   onAuthStateChanged,
+  User,
 } from "firebase/auth"
 import {
   getFirestore,
@@ -18,6 +19,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { BackgroundGrid } from "@/components/BackgroundGrid"
+import { Logo } from "@/components/Logo"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -29,9 +31,13 @@ export default function ProfilePage() {
   const [error, setError] = useState("")
 
   useEffect(() => {
+    if (!app) {
+      console.error("Firebase app not initialized");
+      return;
+    }
     const auth = getAuth(app)
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
+      if (user && app) {
         const db = getFirestore(app)
         const userRef = doc(db, "users", user.uid)
         const docSnap = await getDoc(userRef)
@@ -50,8 +56,11 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setLoading(true)
     try {
+      if (!app) {
+        throw new Error("Firebase app not initialized");
+      }
       const auth = getAuth(app)
-      const user = await new Promise<any>((resolve, reject) => {
+      const user = await new Promise<User>((resolve, reject) => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
           unsubscribe()
           if (user) resolve(user)
@@ -71,8 +80,8 @@ export default function ProfilePage() {
 
       toast.success("Profile saved successfully")
       router.push("/dashboard")
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
@@ -86,7 +95,7 @@ export default function ProfilePage() {
       {/* Form Container */}
       <div className="relative z-10 w-full max-w-md space-y-6 p-8 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-2xl rounded-2xl border border-white/20 dark:border-slate-700/50">
         <div className="text-center">
-          <img className="mx-auto h-12 w-auto mb-4" src="/images/Logo/forgefit-logo-orange.svg" alt="ForgeFit" />
+          <Logo className="mx-auto h-12 w-auto mb-4" width={150} height={48} alt="ForgeFit" />
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Your Fitness Profile</h1>
         </div>
 

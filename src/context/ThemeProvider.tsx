@@ -50,7 +50,7 @@ export function ThemeProvider({
 
     applyTheme(theme);
 
-    const handleChange = (e: MediaQueryListEvent) => {
+    const handleChange = () => {
       if (theme === 'system') {
         applyTheme('system');
       }

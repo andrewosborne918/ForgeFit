@@ -19,16 +19,34 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { useAppContext } from "@/context/AppContext"
+// import { Logo } from "@/components/Logo"
 
 interface ExerciseItem {
   exercise?: string;
   sets?: string | number;
   reps?: string | number;
   description?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
-const countTotalExercises = (plan: any) => {
+interface WorkoutPlan {
+  id?: string;
+  title?: string;
+  image?: string;
+  plan?: {
+    title?: string;
+    goal?: string;
+    duration?: string | number;
+    notes?: string;
+    workout?: {
+      warmup?: ExerciseItem[];
+      mainWorkout?: ExerciseItem[];
+      cooldown?: ExerciseItem[];
+    };
+  };
+}
+
+const countTotalExercises = (plan: WorkoutPlan) => {
   let count = 0;
   if (plan?.plan?.workout?.warmup) count += plan.plan.workout.warmup.length;
   if (plan?.plan?.workout?.mainWorkout) count += plan.plan.workout.mainWorkout.length;
@@ -67,7 +85,7 @@ interface CurrentExerciseState {
 export default function WorkoutDetailPage() {
   const { uid, ts } = useParams() as { uid: string; ts: string };
   const { userProfile, loading: appContextLoading, profileLoading } = useAppContext(); // Destructure profileLoading
-  const [plan, setPlan] = useState<any>(null);
+  const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [pageState, setPageState] = useState<"contextLoading" | "profileLoading" | "planLoading" | "planLoaded" | "error">("contextLoading"); // Added "profileLoading" state
   const router = useRouter();
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
@@ -128,11 +146,15 @@ export default function WorkoutDetailPage() {
   useEffect(() => {
     console.log("WorkoutDetailPage EFFECT 2: pageState:", pageState, "plan:", plan ? "exists" : "null");
 
-    if (pageState === "planLoading" && uid && ts && !plan) {
+    if (pageState === "planLoading" && uid && ts && !plan && app) {
       let isActive = true; // Prevent state updates if component unmounts during async operation
 
       const fetchWorkoutData = async () => {
         try {
+          if (!app) {
+            console.error("Firebase app not initialized");
+            return;
+          }
           const db = getFirestore(app);
 
           if (ts.startsWith("generated-")) {
@@ -268,8 +290,9 @@ export default function WorkoutDetailPage() {
 
       const data: ApiReturnedExerciseDetails = await response.json();
       setCurrentExerciseForInfo({ name: exerciseName, details: data });
-    } catch (error: any) {
-      setCurrentExerciseForInfo({ name: exerciseName, error: error.message || "Could not load exercise details." });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Could not load exercise details."
+      setCurrentExerciseForInfo({ name: exerciseName, error: errorMessage });
     } finally {
       setIsFetchingExerciseInfo(false);
     }
@@ -313,7 +336,7 @@ export default function WorkoutDetailPage() {
 
   // If pageState is "planLoaded" and plan exists, render the content
   if (pageState === "planLoaded" && plan) {
-    const pageUrl = typeof window !== 'undefined' ? window.location.href : `https://forgefit.pro/workout/${uid}/${ts}`;
+    // const pageUrl = typeof window !== 'undefined' ? window.location.href : `https://forgefit.pro/workout/${uid}/${ts}`;
     const workoutTitle = plan.plan?.title || "ForgeFit Workout";
     
     // OG Tag values
@@ -398,7 +421,7 @@ export default function WorkoutDetailPage() {
               </head>
               <body>
                 <div class="print-header">
-                  <img src="/images/Logo/forgefit-logo-orange.svg" alt="ForgeFit Logo" class="logo" />
+                  <img src="/images/Logo/forgefit-logo-orange.png" alt="ForgeFit Logo" class="logo" />
                   <p class="app-url">https://forgefit.pro</p>
                 </div>
                 ${printContents}
@@ -555,11 +578,11 @@ export default function WorkoutDetailPage() {
                   <p className="text-center text-md text-muted-foreground dark:text-slate-400 mb-6 workout-duration-print">Duration: {plan.plan?.duration || "--"}</p>
                 </div>
 
-                {renderExerciseSection("Warm-up", plan.plan?.workout?.warmup, "warmup")}
+                {renderExerciseSection("Warm-up", plan.plan?.workout?.warmup || [], "warmup")}
                 {plan.plan?.workout && (
                   <>
-                    {renderExerciseSection("Main Workout", plan.plan.workout.mainWorkout, "mainWorkout")}
-                    {renderExerciseSection("Cooldown", plan.plan.workout.cooldown, "cooldown")}
+                    {renderExerciseSection("Main Workout", plan.plan.workout.mainWorkout || [], "mainWorkout")}
+                    {renderExerciseSection("Cooldown", plan.plan.workout.cooldown || [], "cooldown")}
                   </>
                 )}
                 {plan.plan?.notes && (

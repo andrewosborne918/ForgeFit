@@ -1,33 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1348.69 372.72">
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1348.7 372.72">
   <defs>
     <style>
       .cls-1 {
-        letter-spacing: -.04em;
+        letter-spacing: -.06em;
       }
 
-      .cls-2 {
-        letter-spacing: -.03em;
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5, .cls-6 {
+        isolation: isolate;
       }
 
-      .cls-3 {
-        letter-spacing: -.03em;
-      }
-
-      .cls-4 {
-        fill: #f2f0f0;
+      .cls-1, .cls-2, .cls-3, .cls-5, .cls-6 {
         font-family: InterV-Bold, 'Inter V';
         font-size: 315px;
         font-variation-settings: 'wght' 700, 'slnt' 0;
         font-weight: 700;
       }
 
+      .cls-1, .cls-3, .cls-5, .cls-6 {
+        fill: #ff6f00;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+
+      .cls-3 {
+        letter-spacing: -.03em;
+      }
+
       .cls-5 {
-        letter-spacing: 0em;
+        letter-spacing: -.04em;
       }
     </style>
   </defs>
-  <g id="Layer_1-2" data-name="Layer 1">
-    <text class="cls-4" transform="translate(0 272.04)"><tspan class="cls-1" x="0" y="0">F</tspan><tspan class="cls-5" x="171.71" y="0">o</tspan><tspan class="cls-3" x="365" y="0">r</tspan><tspan x="485.7" y="0">geFit</tspan><tspan class="cls-2" x="1265.7" y="0">.</tspan></text>
+  <g id="Layer_2-2" data-name="Layer 2">
+    <g id="Layer_1-2" data-name="Layer 1-2">
+      <g class="cls-4">
+        <g>
+          <text class="cls-5" transform="translate(0 272.04)"><tspan x="0" y="0">F</tspan></text>
+          <text class="cls-6" transform="translate(171.71 272.04)"><tspan x="0" y="0">o</tspan></text>
+          <text class="cls-3" transform="translate(365 272.04)"><tspan x="0" y="0">r</tspan></text>
+          <text class="cls-6" transform="translate(485.7 272.04)"><tspan x="0" y="0">ge</tspan></text>
+          <text class="cls-2" transform="translate(873.41 272.04)"><tspan x="0" y="0">Fit</tspan></text>
+          <text class="cls-1" transform="translate(1265.7 272.04)"><tspan x="0" y="0">.</tspan></text>
+        </g>
+      </g>
+    </g>
   </g>
 </svg>

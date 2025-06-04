@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import Image from "next/image"
+// import { Logo } from "@/components/Logo"
 
 export function MarketingNavbar() {
 	const [isScrolled, setIsScrolled] = useState(false)
@@ -27,14 +28,11 @@ export function MarketingNavbar() {
 			<div className="max-w-7xl mx-auto flex justify-between items-center">
 				<Link href="/marketing" className="flex items-center gap-2">
 					<Image
-						src={
-							isScrolled
-								? "/images/Logo/forgefit-logo-orange.svg"
-								: "/images/Logo/forgefit-logo-white.svg"
-						}
+						src="/images/Logo/forgefit-logo-white.png"
 						alt="ForgeFit Logo"
-						width={150} // Set width to 150px
-						height={40} // Maintaining aspect ratio, adjust height accordingly or remove for auto-scaling if image is SVG and styled with CSS for height.
+						width={150}
+						height={40}
+						priority
 					/>
 				</Link>
 				<nav className="hidden md:flex items-center gap-6 text-sm font-medium">
@@ -85,8 +83,7 @@ export function MarketingNavbar() {
 					</Link>
 					<Link href="/auth/signup">
 						<Button
-							size="sm"
-							className="bg-primary hover:bg-primary/90 text-white"
+							className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-full font-semibold shadow-xs"
 						>
 							Sign Up
 						</Button>

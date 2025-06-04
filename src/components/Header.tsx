@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle"; // Import ThemeToggle
+import { Button } from "@/components/ui/button"; // Import Button
 
 const links = [
 	{ href: "/dashboard", label: "Workouts" },
@@ -17,6 +18,15 @@ export function Header() {
 
 	const toggleMobileMenu = () => {
 		setIsMobileMenuOpen(!isMobileMenuOpen);
+	};
+
+	const handleLogout = async () => {
+		if (typeof window !== 'undefined') {
+			const { getAuth, signOut } = await import('firebase/auth');
+			const auth = getAuth();
+			await signOut(auth);
+			window.location.href = '/marketing';
+		}
 	};
 
 	return (
@@ -48,6 +58,15 @@ export function Header() {
 						))}
 					</nav>
 					<ThemeToggle /> {/* Added ThemeToggle for desktop */}
+					<Button
+						variant="outline"
+						size="icon"
+						className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+						onClick={handleLogout}
+						title="Log out"
+					>
+						<LogOut className="h-5 w-5" />
+					</Button>
 				</div>
 
 				{/* Mobile Menu Button and Toggle */}
@@ -84,8 +103,20 @@ export function Header() {
 						))}
 						{/* ThemeToggle for Mobile Menu Dropdown */}
 						<li className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 w-full flex justify-center">
-							<div className="py-2">
+							<div className="py-2 flex items-center gap-3">
                                 <ThemeToggle />
+								<Button
+									variant="outline"
+									size="icon"
+									className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+									onClick={() => {
+										toggleMobileMenu();
+										handleLogout();
+									}}
+									title="Log out"
+								>
+									<LogOut className="h-5 w-5" />
+								</Button>
                             </div>
 						</li>
 					</ul>

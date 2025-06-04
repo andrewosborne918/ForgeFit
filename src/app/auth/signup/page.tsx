@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   getAuth,
@@ -14,14 +14,16 @@ import {
   setDoc,
   serverTimestamp,
 } from "firebase/firestore"
-import { app } from "@/lib/firebase"
+import { app, isFirebaseConfigured } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { BackgroundGrid } from "@/components/BackgroundGrid"
+import { Logo } from "@/components/Logo"
 
-
+// Prevent static generation for this page
+export const dynamic = 'force-dynamic'
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -29,37 +31,71 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Don't render anything until component is mounted (prevents SSR issues)
+  if (!mounted) {
+    return null
+  }
+
+  // Show configuration error if Firebase is not properly configured
+  if (!isFirebaseConfigured) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center p-8">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Firebase Configuration Error</h1>
+          <p className="text-gray-600">
+            Firebase is not properly configured. Please check your environment variables.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!app) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground">
+            Firebase app not initialized. Please check your configuration.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   const auth = getAuth(app)
 
 const handleSignUp = async () => {
   if (password !== confirmPassword) {
-    console.warn("Passwords don't match")
     return setError("Passwords do not match")
   }
 
   setLoading(true)
   try {
+    if (!app) {
+      throw new Error("Firebase app not initialized");
+    }
     const auth = getAuth(app)
-    console.log("Creating user...")
     const userCred = await createUserWithEmailAndPassword(auth, email, password)
     const user = userCred.user
-    console.log("User created:", user.uid)
 
     const db = getFirestore(app)
-    console.log("Writing to Firestore...")
     await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,
       email: user.email,
       createdAt: serverTimestamp(),
     })
-    console.log("✅ Firestore write succeeded")
 
     router.push("/profile")
-  } catch (err: any) {
-    console.error("❌ Signup error:", err.message)
-    setError(err.message)
+  } catch (err: unknown) {
+    const error = err as { message?: string }
+    setError(error.message || 'An error occurred')
   } finally {
     setLoading(false)
   }
@@ -68,21 +104,45 @@ const handleSignUp = async () => {
 
 const handleGoogle = async () => {
   setLoading(true)
+  setError("") // Clear any previous errors
   try {
-    const userCred = await signInWithPopup(auth, new GoogleAuthProvider())
+    if (!app) {
+      throw new Error("Firebase app not initialized");
+    }
+    const provider = new GoogleAuthProvider()
+    provider.addScope('email')
+    provider.addScope('profile')
+    
+    const userCred = await signInWithPopup(auth, provider)
     const user = userCred.user
 
-    // Save to Firestore (only if first login)
+    // Save to Firestore (merge with existing data if any)
     const db = getFirestore(app)
     await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,
       email: user.email,
       createdAt: serverTimestamp(),
-    })
-
+    }, { merge: true }) // Use merge to avoid overwriting existing data
+    
     router.push("/profile")
-  } catch (err: any) {
-    setError(err.message)
+  } catch (err: unknown) {
+    const error = err as { code?: string; message?: string }
+    
+    if (error.code === 'auth/popup-closed-by-user') {
+      setError("Sign-in was cancelled. Please try again.")
+    } else if (error.code === 'auth/popup-blocked') {
+      setError("Popup was blocked by your browser. Please allow popups for this site and try again.")
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      setError("Another sign-in popup is already open. Please close it and try again.")
+    } else if (error.code === 'auth/network-request-failed') {
+      setError("Network error. Please check your internet connection and try again.")
+    } else if (error.code === 'auth/unauthorized-domain') {
+      setError("This domain is not authorized for Google sign-in. Please contact support.")
+    } else if (error.code === 'auth/operation-not-allowed') {
+      setError("Google sign-in is not enabled. Please contact support.")
+    } else {
+      setError(`Sign-in failed: ${error.message || "Unknown error"}`)
+    }
   } finally {
     setLoading(false)
   }
@@ -96,7 +156,9 @@ const handleGoogle = async () => {
       {/* Form Container */}
       <div className="relative z-10 w-full max-w-md space-y-6 p-8 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-2xl rounded-2xl border border-white/20 dark:border-slate-700/50">
         <div className="text-center">
-          <img className="mx-auto h-12 w-auto mb-4" src="/images/Logo/forgefit-logo-orange.svg" alt="ForgeFit" />
+          <div>
+            <Logo className="mx-auto h-12 w-auto mb-4" width={150} height={48} alt="ForgeFit" />
+          </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Create Your ForgeFit Account</h1>
         </div>
         <div className="space-y-2">
@@ -134,7 +196,7 @@ const handleGoogle = async () => {
         </div>
         {error && <p className="text-red-500 dark:text-red-400 text-sm text-center">{error}</p>}
         <Button 
-          className="w-full bg-primary hover:bg-primary/90 text-white" 
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white" 
           onClick={handleSignUp} 
           disabled={loading}
         >
@@ -153,7 +215,9 @@ const handleGoogle = async () => {
           variant="outline" 
           className="w-full border-slate-300 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 hover:bg-white/70 dark:hover:bg-slate-700/70" 
           onClick={handleGoogle}
+          disabled={loading}
         >
+          {loading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
           Sign up with Google
         </Button>
         <p className="text-sm text-center text-slate-600 dark:text-slate-400">

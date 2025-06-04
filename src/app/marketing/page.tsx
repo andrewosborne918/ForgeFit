@@ -4,9 +4,10 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Sparkles, Cpu, Users, TrendingUp, CheckCircle2, ShieldCheck, Zap, Target } from "lucide-react" // Added ShieldCheck, Zap, Target
+import { Sparkles, Cpu, Users, TrendingUp, CheckCircle2, Zap, Target } from "lucide-react"
 import { motion } from "framer-motion"
 import { MarketingNavbar } from "@/components/MarketingNavbar" // Added MarketingNavbar import
+import { Logo } from "@/components/Logo"
 
 // Animation variants for sections and items
 const sectionVariants = {
@@ -58,7 +59,7 @@ export default function MarketingPage() {
             className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight"
             variants={itemVariants}
           >
-            Forge Your Best Body <br /> <span className="text-orange-500">with AI-Crafted Workouts</span>
+            Forge Your Best Body <span className="text-orange-500">with AI-Crafted Workouts</span>
           </motion.h1>
           <motion.p
             className="text-slate-200 mt-6 text-lg md:text-xl max-w-xl mx-auto"
@@ -72,15 +73,8 @@ export default function MarketingPage() {
           >
             <motion.div variants={itemVariants}>
               <Link href="/auth/signup">
-                <Button size="lg" className="px-8 py-3 text-lg font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-full">
-                  Generate 3 Workouts Free
-                </Button>
-              </Link>
-            </motion.div>
-            <motion.div variants={itemVariants}>
-              <Link href="/auth/signin">
-                <Button variant="outline" size="lg" className="px-8 py-3 text-lg font-semibold text-black bg-white hover:bg-orange-500 hover:text-white border-white/80 rounded-full">
-                  Log In
+                <Button size="lg" className="px-8 py-3 text-lg font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-xs">
+                  Generate Free Workouts
                 </Button>
               </Link>
             </motion.div>
@@ -106,7 +100,7 @@ export default function MarketingPage() {
           variants={staggeredContainerVariants}
         >
           {[ // Updated content and icons
-            { icon: Target, step: "1", title: "Tell us your goals", desc: "Share your fitness objectives, preferred schedule, and any equipment you have access to." },
+            { icon: Target, step: "1", title: "Tell us your goals", desc: "Share your fitness objectives, preferred schedule, and any equipment you have available to you." },
             { icon: Cpu, step: "2", title: "AI creates your workouts", desc: "Our intelligent system instantly crafts a personalized workout plan tailored specifically for you." },
             { icon: TrendingUp, step: "3", title: "Track progress & stay consistent", desc: "Follow your plan, log your workouts, monitor your progress, and watch as your plan adapts with you." }
           ].map(({ icon: Icon, step, title, desc }) => (
@@ -146,8 +140,8 @@ export default function MarketingPage() {
         >
           {[
             { icon: Users, title: "Built for Busy People", desc: "Flexible plans that adapt to your schedule, no matter how packed. Fitness that fits your life." },
-            { icon: Zap, title: "AI-Powered Precision", desc: "Leveraging GPT-4 & LLaMA 3 for smarter, more adaptive, and effective workout plans." },
-            { icon: Sparkles, title: "Progressive & Adaptive", desc: "Your plan evolves with you. Workouts get smarter each week, keeping you challenged and engaged." }
+            { icon: Zap, title: "AI-Powered Precision", desc: "Leveraging Google Gemini for smarter, more adaptive, and effective workout plans." },
+            { icon: Sparkles, title: "Progressive & Adaptive", desc: "Each new plan is uniquely generated using your preferences — keeping your workouts fresh, challenging, and never repetitive." }
           ].map(({ icon: Icon, title, desc }) => (
             <motion.li
               key={title}
@@ -233,8 +227,7 @@ export default function MarketingPage() {
               "Personalized to your goals & equipment",
               "Detailed progress tracking & analytics",
               "Full exercise library access with instructions",
-              "Workout reminders and notifications",
-              "Export workout history & data",
+              "Weekly workout schedule",
               "Priority support"
             ].map((feature, i) => (
               <motion.li
@@ -249,12 +242,10 @@ export default function MarketingPage() {
               </motion.li>
             ))}
           </ul>
+          {/* PRICING SECTION BUTTON */}
           <Link href="/auth/signup" className="block mt-10">
-            <Button
-              size="lg"
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 text-lg rounded-full transition-transform duration-200 hover:scale-105 active:scale-95"
-            >
-              Upgrade for Unlimited Workouts
+            <Button className="px-8 py-3 text-lg font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-xs mt-6 w-full">
+              Upgrade Now
             </Button>
           </Link>
           <p className="text-xs text-slate-500 mt-4">No commitment. Cancel anytime.</p>
@@ -262,44 +253,37 @@ export default function MarketingPage() {
       </motion.section>
 
       {/* About Section */}
+      {/* ABOUT FORGEFIT SECTION */}
       <motion.section
         id="about" // Added ID for navigation
-        className="bg-primary text-primary-foreground py-16 sm:py-24 px-4 sm:px-6"
+        className="py-16 px-4 bg-orange-500/90"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
         variants={sectionVariants}
       >
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white">About ForgeFit</h2>
-          <p className="mt-5 text-lg sm:text-xl max-w-2xl mx-auto text-slate-100 leading-relaxed">
-            Our mission is to empower everyone to achieve their fitness goals with personalized, AI-powered workout plans and modern, accessible tools.
-          </p>
-          <motion.div
-            className="grid md:grid-cols-2 gap-8 mt-12 text-left"
-            variants={staggeredContainerVariants}
-          >
-            <motion.div
-              className="bg-white/10 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-lg hover:bg-white/20 transition-colors duration-300"
-              variants={itemVariants}
-              whileHover={cardHoverVariants.hover}
-            >
-              <h3 className="font-semibold text-2xl mb-3 text-white">Why ForgeFit?</h3>
-              <p className="text-base sm:text-lg text-slate-50 leading-relaxed">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl font-bold text-white mb-8 text-center">About ForgeFit</h2>
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+            {/* Card 1 */}
+            <div className="bg-orange-100/90 rounded-xl shadow-lg p-6 text-slate-800">
+              <h3 className="font-semibold text-xl mb-2">Our Mission</h3>
+              <p className="text-sm leading-relaxed">
+                To empower everyone to achieve their fitness goals with personalized, AI-powered workout plans and modern, accessible tools.
+              </p>
+              <br/>
+              <h3 className="font-semibold text-xl mb-2">Why ForgeFit?</h3>
+              <p className="text-sm leading-relaxed">
                 We believe fitness can be smarter and more intuitive — seamlessly integrated into your schedule, perfectly aligned with your goals, and responsive to your preferences.
               </p>
-            </motion.div>
-            <motion.div
-              className="bg-white/10 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-lg hover:bg-white/20 transition-colors duration-300"
-              variants={itemVariants}
-              whileHover={cardHoverVariants.hover}
-            >
-              <h3 className="font-semibold text-2xl mb-3 text-white">Our Vision</h3>
-              <p className="text-base sm:text-lg text-slate-50 leading-relaxed">
+              <br/>
+              <h3 className="font-semibold text-xl mb-2">Our Vision</h3>
+              <p className="text-sm leading-relaxed">
                 A world where everyone can access intelligent fitness guidance, regardless of experience or background. ForgeFit is your dedicated partner on that journey to a healthier, stronger life.
               </p>
-            </motion.div>
-          </motion.div>
+            </div>
+
+          </div>
         </div>
       </motion.section>
 
@@ -356,8 +340,8 @@ export default function MarketingPage() {
           whileTap={{ scale: 0.95 }}
         >
           <Link href="/auth/signup">
-            <Button size="lg" className="px-10 py-4 text-xl font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg hover:shadow-primary/50 transition-all duration-300">
-              Generate 3 Workouts Free
+            <Button size="lg" className="px-10 py-4 text-xl font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-xs">
+              Generate Free Workouts
             </Button>
           </Link>
         </motion.div>
@@ -368,8 +352,7 @@ export default function MarketingPage() {
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-left">
           <div>
             <Link href="/marketing" className="flex items-center gap-2 mb-3">
-              <Image src="/images/Logo/forgefit-logo-orange.svg" alt="ForgeFit Logo" width={150} height={36} /> {/* Set width to 150px, adjusted height */}
-              {/* <span className="font-bold text-xl text-primary">ForgeFit</span> */}
+              <Logo width={150} height={36} className="" alt="ForgeFit Logo" />
             </Link>
             <p className="text-muted-foreground dark:text-slate-400">AI-powered fitness for everyone.</p>
           </div>
@@ -398,7 +381,7 @@ export default function MarketingPage() {
           </div>
         </div>
         <p className="text-center text-muted-foreground dark:text-slate-500 mt-12 text-xs">
-          © {new Date().getFullYear()} ForgeFit. All rights reserved. Not a real product - for demonstration purposes only.
+          © {new Date().getFullYear()} ForgeFit. All rights reserved.
         </p>
       </footer>
     </div>

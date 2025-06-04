@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { getShuffledWorkoutImages, preloadImages } from "@/utils/imageUtils"
 
 interface BackgroundGridProps {
@@ -57,11 +58,11 @@ export function BackgroundGrid({ imageCount = 45, className = "" }: BackgroundGr
                 animation: 'fadeInScale 0.6s ease-out forwards',
               }}
             >
-            <img
+            <Image
               src={imageUrl}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-              loading="lazy"
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-110"
               onError={(e) => {
                 // Fallback to a solid color if image fails to load
                 const target = e.target as HTMLImageElement;

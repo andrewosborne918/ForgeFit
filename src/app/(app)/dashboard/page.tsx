@@ -1,23 +1,23 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext'; // Changed useAuth to useAppContext
 import { useRouter } from 'next/navigation';
 import { app } from '@/lib/firebase'; // Import app
 import { getFirestore, setDoc, doc, collection, query, orderBy, getDocs, deleteDoc, getDoc, writeBatch } from 'firebase/firestore'; // Import firestore functions
-import LOADING_MESSAGES from "@/lib/loadingMessages" 
+// import LOADING_MESSAGES from "@/lib/loadingMessages" 
 import Image from "next/image" 
 import { Button } from "@/components/ui/button" 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog" 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" 
-import { Input } from "@/components/ui/input" 
-import { Label } from "@/components/ui/label" 
-import { Checkbox } from "@/components/ui/checkbox" 
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog" 
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+// import { Input } from "@/components/ui/input"
+// import { Label } from "@/components/ui/label"
+// import { Checkbox } from "@/components/ui/checkbox"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"; 
 import Link from 'next/link'; 
-import { Loader2, Edit3, Save, PlusCircle, Coffee, Repeat, Zap, CalendarPlus, Trash2, ImageIcon, ChevronLeft, ChevronRight, GripVertical, Sun, Moon, Settings, LogOut, User as UserIcon, Info, AlertTriangle, CheckCircle, X, XCircle, Eye } from "lucide-react"; // Added Eye icon
-import { Slider } from "@/components/ui/slider"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Loader2, Edit3, PlusCircle, Coffee, Repeat, Zap, /* CalendarPlus, */ Trash2, ImageIcon, XCircle, Eye } from "lucide-react"; // Added Eye icon
+// import { Slider } from "@/components/ui/slider"
+// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 const IMAGE_POOL_SIZE = 35
 
@@ -28,13 +28,45 @@ interface WorkoutAssignmentDetails {
   imageUrl?: string;
 }
 
+interface WorkoutPlan {
+  id?: string;
+  title?: string;
+  duration?: string | number;
+  imageUrl?: string;
+  plan?: {
+    title?: string;
+    duration?: string | number;
+    workout?: {
+      warmup?: ExerciseItem[];
+      mainWorkout?: ExerciseItem[];
+      cooldown?: ExerciseItem[];
+    };
+  };
+}
+
+interface ExerciseItem {
+  exercise?: string;
+  sets?: string | number;
+  reps?: string | number;
+  description?: string;
+  [key: string]: unknown;
+}
+
+interface CompletedPlan {
+  id: string;
+  plan?: WorkoutPlan;
+  image?: string;
+  timestamp?: number;
+  createdAt?: string;
+}
+
 interface DayAssignment {
   type: 'workout' | 'rest' | 'stretch' | null;
   workoutDetails?: WorkoutAssignmentDetails;
-  workout?: any; // Use 'workout' for the full plan object
+  workout?: WorkoutPlan; // Use proper type for the full plan object
 }
 
-const DAYS_OF_WEEK_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+// const DAYS_OF_WEEK_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAYS_OF_WEEK_ABBREVIATED = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 
@@ -58,16 +90,17 @@ function getNextWorkoutImage(gender: string): string {
 export default function DashboardPage() {
   const { user, userProfile, setUserProfile, loading: authLoading } = useAppContext();
   const router = useRouter();
-  const db = getFirestore(app);
+  
+  // All React hooks must be called at the top level, before any early returns
   const [isModalOpen, setIsModalOpen] = useState(false); // This state controls the main generation modal
-  const [plan, setPlan] = useState<any>(null) 
-  const [planImage, setPlanImage] = useState<string | null>(null)
+  // const [plan, setPlan] = useState<WorkoutPlan | null>(null) 
+  // const [planImage, setPlanImage] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
-  const [completedPlans, setCompletedPlans] = useState<any[]>([]) 
-  const [loadingCompletedPlans, setLoadingCompletedPlans] = useState(true)
+  const [completedPlans, setCompletedPlans] = useState<CompletedPlan[]>([]) 
+  // const [loadingCompletedPlans, setLoadingCompletedPlans] = useState(true)
   const [planToDelete, setPlanToDelete] = useState<string | null>(null)
-  const [currentLoadingMessage, setCurrentLoadingMessage] = useState("")
-  const [usedMessages, setUsedMessages] = useState<string[]>([])
+  // const [currentLoadingMessage, setCurrentLoadingMessage] = useState("")
+  // const [usedMessages, setUsedMessages] = useState<string[]>([])
 
   const draggedWorkoutRef = useRef<WorkoutAssignmentDetails | null>(null);
 
@@ -85,6 +118,117 @@ export default function DashboardPage() {
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([])
   const [otherEquipment, setOtherEquipment] = useState("")
   const [activeTab, setActiveTab] = useState("general")
+
+  const [weeklySchedule, setWeeklySchedule] = useState<Array<DayAssignment | null>>(Array(7).fill(null));
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
+  const [isDayOptionsModalOpen, setIsDayOptionsModalOpen] = useState(false);
+  const [assigningWorkoutToDayIndex, setAssigningWorkoutToDayIndex] = useState<number | null>(null);
+
+  // const [isAssignToDayModalOpen, setIsAssignToDayModalOpen] = useState(false);
+  // const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutAssignmentDetails | null>(null);
+
+  // New state for the Workout Edit Options Modal
+  const [isWorkoutEditModalOpen, setIsWorkoutEditModalOpen] = useState(false);
+  const [dayIndexForWorkoutEdit, setDayIndexForWorkoutEdit] = useState<number | null>(null);
+
+  const [isClearAllDialogOpen, setIsClearAllDialogOpen] = useState(false); // State for Clear All confirmation dialog
+
+  // All useEffect hooks must be called before any early returns
+  // 1. On mount, load weeklySchedule from Firestore subcollection (users/{uid}/weeklySchedule/{dayIndex})
+  useEffect(() => {
+    if (!user || !app) return;
+    const db = getFirestore(app);
+    const fetchWeeklySchedule = async () => {
+      try {
+        const scheduleCol = collection(db, `users/${user.uid}/weeklySchedule`);
+        const snapshot = await getDocs(scheduleCol);
+        const scheduleArr: Array<DayAssignment | null> = Array(7).fill(null);
+        snapshot.forEach(docSnap => {
+          const idx = parseInt(docSnap.id, 10);
+          if (!isNaN(idx) && idx >= 0 && idx < 7) {
+            scheduleArr[idx] = docSnap.data() as DayAssignment;
+          }
+        });
+        setWeeklySchedule(scheduleArr);
+      } catch (err) {
+        console.error("Error loading weekly schedule from Firestore:", err);
+      }
+    };
+    fetchWeeklySchedule();
+  }, [user]);
+
+  // Always fetch the latest user profile from Firestore on mount or when user changes
+  useEffect(() => {
+    if (!user || !app) {
+      console.log("Dashboard ProfileFetch: No user or app, skipping profile fetch.");
+      return;
+    }
+    const db = getFirestore(app);
+    console.log("Dashboard ProfileFetch: User detected (uid:", user.uid, "), attempting to fetch profile.");
+    const fetchUserProfile = async () => {
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          console.log("Dashboard ProfileFetch: Profile data fetched from Firestore:", JSON.stringify(userData));
+          if (setUserProfile) {
+            console.log("Dashboard ProfileFetch: Calling setUserProfile with fetched data.");
+            setUserProfile(userData as UserProfile);
+          }
+        } else {
+          console.log("Dashboard ProfileFetch: User document not found in Firestore for uid:", user.uid);
+          if (setUserProfile) {
+            console.log("Dashboard ProfileFetch: Setting userProfile to null as Firestore doc not found.");
+            setUserProfile(null); 
+          }
+        }
+      } catch (err) {
+        console.error("Dashboard ProfileFetch: Error fetching user profile from Firestore:", err);
+      }
+    };
+    fetchUserProfile();
+  }, [user, setUserProfile]);
+
+  useEffect(() => {
+    if (userProfile?.gender) {
+      setGeneratePlanCardImage(getNextWorkoutImage(userProfile.gender));
+    }
+  }, [userProfile?.gender]);
+
+  useEffect(() => {
+    if (user && app) {
+      const db = getFirestore(app);
+      const fetchCompletedPlans = async () => {
+        // db is already initialized
+        const logsCollectionRef = collection(db, `users/${user.uid}/logs`);
+        const q = query(logsCollectionRef, orderBy("timestamp", "desc")); 
+
+        try {
+          const querySnapshot = await getDocs(q);
+          const plans = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          } as CompletedPlan));
+          setCompletedPlans(plans);
+        } catch (error) {
+          console.error("Error fetching completed plans:", error);
+        }
+      };
+
+      fetchCompletedPlans();
+    } else {
+      setCompletedPlans([]); 
+    }
+  }, [user]); 
+
+  // Handle Firebase app initialization safely - moved after all hooks
+  if (!app) {
+    console.error("Firebase app not initialized");
+    return <div>Firebase configuration error</div>;
+  }
+  
+  const db = getFirestore(app);
 
   // ADDED: handleEquipmentChange function
   const handleEquipmentChange = (item: string, checked: boolean) => {
@@ -111,20 +255,6 @@ export default function DashboardPage() {
     }));
   };
 
-  const [weeklySchedule, setWeeklySchedule] = useState<Array<DayAssignment | null>>(Array(7).fill(null));
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
-  const [isDayOptionsModalOpen, setIsDayOptionsModalOpen] = useState(false);
-  const [assigningWorkoutToDayIndex, setAssigningWorkoutToDayIndex] = useState<number | null>(null);
-
-  const [isAssignToDayModalOpen, setIsAssignToDayModalOpen] = useState(false);
-  const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutAssignmentDetails | null>(null);
-
-  // New state for the Workout Edit Options Modal
-  const [isWorkoutEditModalOpen, setIsWorkoutEditModalOpen] = useState(false);
-  const [dayIndexForWorkoutEdit, setDayIndexForWorkoutEdit] = useState<number | null>(null);
-
-  const [isClearAllDialogOpen, setIsClearAllDialogOpen] = useState(false); // State for Clear All confirmation dialog
-
   const formatDuration = (minutes: number): string => {
     if (minutes < 60) {
       return `${minutes} minutes`;
@@ -138,131 +268,46 @@ export default function DashboardPage() {
     return `${hours} ${hourText}, ${remainingMinutes} minutes`;
   };
 
-  const getRandomLoadingMessage = () => {
-    let availableMessages = LOADING_MESSAGES.filter(msg => !usedMessages.includes(msg));
-    if (availableMessages.length === 0) {
-      availableMessages = LOADING_MESSAGES; 
-      setUsedMessages([]);
-    }
-    const randomIndex = Math.floor(Math.random() * availableMessages.length);
-    const selectedMessage = availableMessages[randomIndex];
-    setUsedMessages(prev => [...prev, selectedMessage]);
-    setCurrentLoadingMessage(selectedMessage);
-  };
+  // const getRandomLoadingMessage = () => {
+  //   let availableMessages = LOADING_MESSAGES.filter(msg => !usedMessages.includes(msg));
+  //   if (availableMessages.length === 0) {
+  //     availableMessages = LOADING_MESSAGES; 
+  //     setUsedMessages([]);
+  //   }
+  //   const randomIndex = Math.floor(Math.random() * availableMessages.length);
+  //   const selectedMessage = availableMessages[randomIndex];
+  //   setUsedMessages(prev => [...prev, selectedMessage]);
+  //   // setCurrentLoadingMessage(selectedMessage);
+  // };
 
 
-  // 1. On mount, load weeklySchedule from Firestore subcollection (users/{uid}/weeklySchedule/{dayIndex})
-  useEffect(() => {
-    if (!user) return;
-    const fetchWeeklySchedule = async () => {
-      try {
-        const scheduleCol = collection(db, `users/${user.uid}/weeklySchedule`);
-        const snapshot = await getDocs(scheduleCol);
-        const scheduleArr: Array<DayAssignment | null> = Array(7).fill(null);
-        snapshot.forEach(docSnap => {
-          const idx = parseInt(docSnap.id, 10);
-          if (!isNaN(idx) && idx >= 0 && idx < 7) {
-            scheduleArr[idx] = docSnap.data() as DayAssignment;
-          }
-        });
-        setWeeklySchedule(scheduleArr);
-      } catch (err) {
-        console.error("Error loading weekly schedule from Firestore:", err);
-      }
-    };
-    fetchWeeklySchedule();
-  }, [user, db]);
-
-  // Always fetch the latest user profile from Firestore on mount or when user changes
-  useEffect(() => {
-    if (!user) {
-      console.log("Dashboard ProfileFetch: No user, skipping profile fetch.");
-      return;
-    }
-    console.log("Dashboard ProfileFetch: User detected (uid:", user.uid, "), attempting to fetch profile.");
-    const fetchUserProfile = async () => {
-      try {
-        const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          console.log("Dashboard ProfileFetch: Profile data fetched from Firestore:", JSON.stringify(userData));
-          if (setUserProfile) {
-            console.log("Dashboard ProfileFetch: Calling setUserProfile with fetched data.");
-            setUserProfile(userData as any);
-          }
-        } else {
-          console.log("Dashboard ProfileFetch: User document not found in Firestore for uid:", user.uid);
-          if (setUserProfile) {
-            console.log("Dashboard ProfileFetch: Setting userProfile to null as Firestore doc not found.");
-            setUserProfile(null); 
-          }
-        }
-      } catch (err) {
-        console.error("Dashboard ProfileFetch: Error fetching user profile from Firestore:", err);
-      }
-    };
-    fetchUserProfile();
-  }, [user, db, setUserProfile]);
-
-  useEffect(() => {
-    if (userProfile?.gender) {
-      setGeneratePlanCardImage(getNextWorkoutImage(userProfile.gender));
-    }
-  }, [userProfile?.gender]);
-
-  useEffect(() => {
-    if (user) {
-      const fetchCompletedPlans = async () => {
-        // db is already initialized
-        const logsCollectionRef = collection(db, `users/${user.uid}/logs`);
-        const q = query(logsCollectionRef, orderBy("timestamp", "desc")); 
-
-        try {
-          const querySnapshot = await getDocs(q);
-          const plans = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setCompletedPlans(plans);
-        } catch (error) {
-          console.error("Error fetching completed plans:", error);
-        }
-      };
-
-      fetchCompletedPlans();
-    } else {
-      setCompletedPlans([]); 
-    }
-  }, [user]); 
-
-  const arePlansEffectivelyEqual = (planA: any, planB: any): boolean => {
-    if (!planA || !planB) return false;
-    if (planA.title !== planB.title) return false;
-    if (planA.duration !== planB.duration) return false;
+  // const arePlansEffectivelyEqual = (planA: WorkoutPlan | null, planB: WorkoutPlan | null): boolean => {
+  //   if (!planA || !planB) return false;
+  //   if (planA.title !== planB.title) return false;
+  //   if (planA.duration !== planB.duration) return false;
     
-    if ((planA.goal || null) !== (planB.goal || null)) return false;
+  //   if ((planA.goal || null) !== (planB.goal || null)) return false;
   
-    const workoutA = planA.workout;
-    const workoutB = planB.workout;
+  //   const workoutA = planA.workout;
+  //   const workoutB = planB.workout;
   
-    if (!workoutA && !workoutB) return true; 
-    if (!workoutA || !workoutB) return false; 
+  //   if (!workoutA && !workoutB) return true; 
+  //   if (!workoutA || !workoutB) return false; 
   
-    const compareSection = (sectionA: any[] | undefined, sectionB: any[] | undefined): boolean => {
-      const normSectionA = sectionA || []; 
-      const normSectionB = sectionB || []; 
+  //   const compareSection = (sectionA: ExerciseItem[] | undefined, sectionB: ExerciseItem[] | undefined): boolean => {
+  //     const normSectionA = sectionA || []; 
+  //     const normSectionB = sectionB || []; 
       
-      if (normSectionA.length !== normSectionB.length) return false;
-      return true;
-    };
+  //     if (normSectionA.length !== normSectionB.length) return false;
+  //     return true;
+  //   };
   
-    if (!compareSection(workoutA.warmup, workoutB.warmup)) return false;
-    if (!compareSection(workoutA.mainWorkout, workoutB.mainWorkout)) return false;
-    if (!compareSection(workoutA.cooldown, workoutB.cooldown)) return false;
+  //   if (!compareSection(workoutA.warmup, workoutB.warmup)) return false;
+  //   if (!compareSection(workoutA.mainWorkout, workoutB.mainWorkout)) return false;
+  //   if (!compareSection(workoutA.cooldown, workoutB.cooldown)) return false;
   
-    return true;
-  };
+  //   return true;
+  // };
 
   const handleDeletePlan = async (planId: string) => {
     if (!user) {
@@ -281,14 +326,31 @@ export default function DashboardPage() {
     }
   };
 
-  const generatePlan = async (preferences?: any) => {
+interface GenerationPreferences {
+  duration?: number;
+  type?: string;
+  muscles?: typeof initialTargetMuscles | null;
+  equipment?: string[];
+  otherEquipment?: string;
+}
+
+interface UserProfile {
+  gender?: string;
+  fitnessLevel?: string;
+  goals?: string[];
+  equipment?: string[];
+  name?: string;
+  [key: string]: unknown;
+}
+
+  const generatePlan = async (preferences?: GenerationPreferences) => {
     setGenerating(true)
     setIsModalOpen(false)
-    getRandomLoadingMessage(); 
+    // getRandomLoadingMessage(); 
     
-    const messageInterval = setInterval(() => {
-        getRandomLoadingMessage();
-    }, 3000); 
+    // const messageInterval = setInterval(() => {
+    //     getRandomLoadingMessage();
+    // }, 3000); 
 
 
     try {
@@ -396,8 +458,8 @@ export default function DashboardPage() {
 
         // FLATTEN the plan structure for activePlan and logs
         const wrappedPlan = { ...json, image: json.imageUrl };
-        setPlan(wrappedPlan);
-        setPlanImage(json.imageUrl);
+        // setPlan(wrappedPlan);
+        // setPlanImage(json.imageUrl);
         localStorage.setItem("activeWorkoutPlan", JSON.stringify(wrappedPlan));
 
         if (user) {
@@ -458,7 +520,7 @@ export default function DashboardPage() {
         if (userProfile?.gender) {
           setGeneratePlanCardImage(getNextWorkoutImage(userProfile.gender));
         }
-      } catch (parseError: any) {
+      } catch (parseError: unknown) {
         console.error("Failed to parse cleaned JSON:", parseError);
         console.error("Problematic raw string:", raw); // Log the string that caused the error
         alert("Failed to generate workout plan due to parsing error. Please check console for details.");
@@ -470,48 +532,48 @@ export default function DashboardPage() {
       setAssigningWorkoutToDayIndex(null); 
     } finally {
       setGenerating(false)
-      clearInterval(messageInterval); 
+      // clearInterval(messageInterval); 
     }
   }
 
-  const handleViewAndStartActivePlan = async () => {
-    if (!user || !plan) {
-      console.warn("User or active plan not available for handleViewAndStartActivePlan.")
-      return;
-    }
+  // const handleViewAndStartActivePlan = async () => {
+  //   if (!user || !plan) {
+  //     console.warn("User or active plan not available for handleViewAndStartActivePlan.")
+  //     return;
+  //   }
 
-    const existingPlanEntry = completedPlans.find(loggedPlan => 
-      arePlansEffectivelyEqual(plan, loggedPlan.plan)
-    );
+  //   const existingPlanEntry = completedPlans.find(loggedPlan => 
+  //     arePlansEffectivelyEqual(plan, loggedPlan.plan)
+  //   );
 
-    if (existingPlanEntry) {
-      console.log("Duplicate plan found in history. Navigating to existing log.");
-      router.push(`/workout/${user.uid}/${existingPlanEntry.id}`);
-      return; 
-    }
+  //   if (existingPlanEntry) {
+  //     console.log("Duplicate plan found in history. Navigating to existing log.");
+  //     router.push(`/workout/${user.uid}/${existingPlanEntry.id}`);
+  //     return; 
+  //   }
 
-    setGenerating(true);
-    try {
-      const timestamp = Date.now();
-      // db is already initialized
+  //   setGenerating(true);
+  //   try {
+  //     const timestamp = Date.now();
+  //     // db is already initialized
 
-      const logRef = doc(db, `users/${user.uid}/logs/${timestamp}`);
-      await setDoc(logRef, {
-        plan: plan, 
-        image: plan.imageUrl || planImage, 
-        createdAt: new Date().toISOString(),
-        timestamp: timestamp,
-      });
+  //     const logRef = doc(db, `users/${user.uid}/logs/${timestamp}`);
+  //     await setDoc(logRef, {
+  //       plan: plan, 
+  //       image: plan.imageUrl || planImage, 
+  //       createdAt: new Date().toISOString(),
+  //       timestamp: timestamp,
+  //     });
 
-      router.push(`/workout/${user.uid}/${timestamp}`);
+  //     router.push(`/workout/${user.uid}/${timestamp}`);
 
-    } catch (err) {
-      console.error("Error starting and logging active plan:", err);
-      alert("Failed to start and log workout. Please try again.");
-    } finally {
-      setGenerating(false);
-    }
-  };
+  //   } catch (err) {
+  //     console.error("Error starting and logging active plan:", err);
+  //     alert("Failed to start and log workout. Please try again.");
+  //   } finally {
+  //     setGenerating(false);
+  //   }
+  // };
 
   const handleDayCardClick = (index: number) => {
     // Always open DayOptionsModal when a card is clicked, unless a workout is being assigned to *this* day
@@ -577,28 +639,29 @@ export default function DashboardPage() {
     setDayIndexForWorkoutEdit(null);
   };
 
-  const handleOpenAssignToDayModal = (workoutDetails: WorkoutAssignmentDetails) => {
-    setWorkoutToAssign(workoutDetails);
-    setIsAssignToDayModalOpen(true);
-    // No longer need to manage isEditingSchedule here
-  };
+  // const handleOpenAssignToDayModal = (/* workoutDetails: WorkoutAssignmentDetails */) => {
+  //   // setWorkoutToAssign(workoutDetails);
+  //   // setIsAssignToDayModalOpen(true);
+  //   // No longer need to manage isEditingSchedule here
+  // };
 
-  const handleAssignWorkoutToSpecificDay = async (dayIndex: number) => {
-    if (!workoutToAssign || dayIndex < 0 || dayIndex >= 7) return;
+  // const handleAssignWorkoutToSpecificDay = async (dayIndex: number) => {
+  //   if (!workoutToAssign || dayIndex < 0 || dayIndex >= 7) return;
 
-    const newAssignment: DayAssignment = {
-      type: 'workout',
-      workoutDetails: { ...workoutToAssign },
-    };
+  //   const newAssignment: DayAssignment = {
+  //     type: 'workout',
+  //     workoutDetails: { ...workoutToAssign },
+  //   };
 
-    const updatedSchedule = [...weeklySchedule];
-    updatedSchedule[dayIndex] = newAssignment;
-    setWeeklySchedule(updatedSchedule);
-    const success = await updateDayAssignmentInFirestore(dayIndex, newAssignment);
-    setIsAssignToDayModalOpen(false);
-    setWorkoutToAssign(null);
-    // No longer need to set isEditingSchedule to false
-  };
+  //   const updatedSchedule = [...weeklySchedule];
+  //   updatedSchedule[dayIndex] = newAssignment;
+  //   setWeeklySchedule(updatedSchedule);
+  //   // const success = await updateDayAssignmentInFirestore(dayIndex, newAssignment);
+  //   await updateDayAssignmentInFirestore(dayIndex, newAssignment);
+  //   setIsAssignToDayModalOpen(false);
+  //   setWorkoutToAssign(null);
+  //   // No longer need to set isEditingSchedule to false
+  // };
 
   // Functions for the new Workout Edit Options Modal
   const handleOpenWorkoutEditModal = (index: number, e?: React.MouseEvent) => {
@@ -684,7 +747,7 @@ export default function DashboardPage() {
       {/* MOVED AND MODIFIED HEADER STARTS HERE */}
       <header className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Welcome, {userProfile?.name || "let's get fit"}!</h1>
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Welcome, {String(userProfile?.name || "let's get fit")}!</h1>
           <p className="mt-2 text-lg text-muted-foreground dark:text-slate-400">
             Ready to forge your best self? Let&apos;s get started.
           </p>
@@ -697,22 +760,6 @@ export default function DashboardPage() {
             onClick={() => setIsModalOpen(true)}
           >
             <Zap className="mr-2 h-5 w-5" /> Generate Workout
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
-            onClick={async () => {
-              if (typeof window !== 'undefined') {
-                const { getAuth, signOut } = await import('firebase/auth');
-                const auth = getAuth();
-                await signOut(auth);
-                window.location.href = '/auth';
-              }
-            }}
-            title="Log out"
-          >
-            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </header>
@@ -823,7 +870,9 @@ export default function DashboardPage() {
                 <div className="flex-1 space-y-4 overflow-y-auto">
                   {completedPlans.map((p) => {
                     const planTitle = p.plan?.title || "Unnamed Workout";
-                    const planDuration = p.plan?.duration ? formatDuration(p.plan.duration) : "Duration not set";
+                    const planDuration = p.plan?.duration 
+                      ? (typeof p.plan.duration === 'number' ? formatDuration(p.plan.duration) : p.plan.duration.toString())
+                      : "Duration not set";
                     const planImage = p.image || p.plan?.imageUrl;
                     const planId = p.id;
                     const workoutDetailsForAssignment: WorkoutAssignmentDetails = {
@@ -867,14 +916,14 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2 flex-shrink-0 pl-0 sm:pl-3 mt-2 sm:mt-0 self-end sm:self-center">
-                          <Button
+                          {/* <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleOpenAssignToDayModal(workoutDetailsForAssignment)}
                             className="text-blue-600 dark:text-blue-400 border-blue-500 dark:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-1 h-auto text-xs"
                           >
                             <CalendarPlus size={14} className="mr-1 sm:mr-2" /> Assign
-                          </Button>
+                          </Button> */}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="icon" onClick={() => setPlanToDelete(p.id)} className="text-destructive hover:text-destructive/80 dark:text-red-500 dark:hover:text-red-400 w-8 h-8">
@@ -886,7 +935,7 @@ export default function DashboardPage() {
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the workout log for "{planTitle}".
+                                    This action cannot be undone. This will permanently delete the workout log for &quot;{planTitle}&quot;.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>

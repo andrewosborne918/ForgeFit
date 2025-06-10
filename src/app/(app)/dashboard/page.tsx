@@ -36,7 +36,9 @@ interface WorkoutPlan {
   image?: string; // Support both image and imageUrl for backward compatibility
   plan?: {
     title?: string;
+    goal?: string;
     duration?: string | number;
+    notes?: string;
     workout?: {
       warmup?: ExerciseItem[];
       mainWorkout?: ExerciseItem[];

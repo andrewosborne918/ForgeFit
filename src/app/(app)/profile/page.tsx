@@ -13,7 +13,7 @@ import {
   getDoc,
   setDoc,
 } from "firebase/firestore"
-import { app } from "@/lib/firebase"
+import { app, isFirebaseConfigured } from "@/lib/firebase"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"

@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { getAuth, onAuthStateChanged } from "firebase/auth"
 import { getFirestore, doc, getDoc } from "firebase/firestore"
 import { useRouter } from "next/navigation"
-import { app } from "@/lib/firebase"
+import { app, isFirebaseConfigured } from "@/lib/firebase"
 import { User } from "firebase/auth"
 
 interface UserProfile {
@@ -69,7 +69,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
       setProfileLoading(true); // Profile loading starts
       try {
-        if (!app) {
+        if (!app || !isFirebaseConfigured) {
           throw new Error("Firebase app not initialized");
         }
         const db = getFirestore(app);

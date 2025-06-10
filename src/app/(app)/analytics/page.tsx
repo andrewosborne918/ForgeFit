@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Activity, Clock, CalendarDays, TrendingUp, Brain, Zap, Award } from "lucide-react"; // Added Brain, Zap, Award icons
 import { useAppContext } from "@/context/AppContext";
 import { getFirestore, collection, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
-import { app } from "@/lib/firebase";
+import { app, isFirebaseConfigured } from "@/lib/firebase";
 import Calendar from 'react-calendar';
 import "@/styles/calendar.css";
 import {
@@ -131,7 +131,7 @@ export default function AnalyticsPage() {
       const fetchWorkoutLogs = async () => {
         setLoading(true);
         try {
-          if (!app) {
+          if (!app || !isFirebaseConfigured) {
             console.error("Firebase app not initialized");
             setLoading(false);
             return;

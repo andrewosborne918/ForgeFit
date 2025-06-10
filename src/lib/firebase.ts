@@ -1,5 +1,5 @@
 // src/lib/firebase.ts
-import { initializeApp, getApps, getApp } from "firebase/app"
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app"
 
 // Firebase configuration with fallback values
 const firebaseConfig = {
@@ -28,7 +28,7 @@ const hasValidConfig = firebaseConfig.apiKey &&
                       firebaseConfig.authDomain && 
                       firebaseConfig.projectId
 
-let app = null
+let app: FirebaseApp | null = null
 try {
   app = hasValidConfig ? (getApps().length ? getApp() : initializeApp(firebaseConfig)) : null
 } catch (error) {

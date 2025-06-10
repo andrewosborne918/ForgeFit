@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react"
 import Head from 'next/head'; // Ensure Head is imported
 import { useParams, useRouter } from "next/navigation"
-import { getFirestore, doc, getDoc } from "firebase/firestore"
-import { app } from "@/lib/firebase"
 import Image from 'next/image'; // Ensure Image is imported
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, CheckCircle2, Info, BadgeCheck, Loader2, Mail, Facebook, X, Printer } from "lucide-react"

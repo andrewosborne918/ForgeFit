@@ -1,11 +1,34 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { userProfile, preferences } = req.body // Destructure preferences
+const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
-  const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!)
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Check if API method is POST
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
+  }
+
+  // Validate API key
+  if (!API_KEY) {
+    console.error("NEXT_PUBLIC_GEMINI_API_KEY is not set in environment variables");
+    return res.status(500).json({ error: "API key not configured", details: "NEXT_PUBLIC_GEMINI_API_KEY is missing" });
+  }
+
+  // Validate request body
+  const { userProfile, preferences } = req.body || {};
+  
+  if (!userProfile) {
+    console.error("Missing userProfile in request body");
+    return res.status(400).json({ error: "Missing userProfile in request body" });
+  }
+
+  console.log("Generating workout plan for user:", userProfile);
+  console.log("With preferences:", preferences);
+
+  const genAI = new GoogleGenerativeAI(API_KEY);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   let equipmentPrompt = "The user has no specific equipment available, so focus on bodyweight exercises.";
   if (preferences?.equipment && preferences.equipment.length > 0) {
@@ -56,13 +79,31 @@ Return only a valid JSON object with the following shape:
 Do not include markdown formatting, code blocks, or any text outside the JSON object. Just return the raw JSON.`
 
   try {
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    const text = await response.text()
-    res.status(200).json({ text })
+    console.log("Calling Gemini API...");
+    const result = await model.generateContent(prompt);
+    console.log("Gemini API call successful");
+    
+    const response = await result.response;
+    const text = await response.text();
+    
+    console.log("Generated text:", text.substring(0, 200) + "...");
+    
+    res.status(200).json({ text });
   } catch (error) {
     console.error("Error generating workout plan:", error);
+    
+    // More detailed error logging
+    if (error instanceof Error) {
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    res.status(500).json({ error: "Failed to generate workout plan", details: errorMessage });
+    res.status(500).json({ 
+      error: "Failed to generate workout plan", 
+      details: errorMessage,
+      type: error instanceof Error ? error.name : "UnknownError"
+    });
   }
 }

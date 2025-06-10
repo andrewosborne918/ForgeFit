@@ -27,6 +27,7 @@
     "geist": "^1.4.2",
     "lucide-react": "^0.511.0",
     "next": "15.3.2",
+    "node-fetch": "^3.3.2",
     "react": "^19.0.0",
     "react-calendar": "^5.1.0",
     "react-dom": "^19.0.0",

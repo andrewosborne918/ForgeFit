@@ -352,7 +352,7 @@ export default function MarketingPage() {
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-left">
           <div>
             <Link href="/marketing" className="flex items-center gap-2 mb-3">
-              <Logo width={150} height={36} className="" alt="ForgeFit Logo" />
+              <Logo width={150} height={36} variant="light" className="" alt="ForgeFit Logo" />
             </Link>
             <p className="text-muted-foreground dark:text-slate-400">AI-powered fitness for everyone.</p>
           </div>

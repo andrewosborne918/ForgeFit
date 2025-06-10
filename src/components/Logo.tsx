@@ -8,13 +8,23 @@ interface LogoProps {
   width?: number;
   height?: number;
   alt?: string;
+  variant?: "auto" | "light" | "dark"; // Add variant prop
 }
 
-export function Logo({ className = "", width = 150, height = 40, alt = "ForgeFit Logo" }: LogoProps) {
+export function Logo({ className = "", width = 150, height = 40, alt = "ForgeFit Logo", variant = "auto" }: LogoProps) {
   const { theme } = useTheme();
-  const src = theme === "dark"
-    ? "/images/Logo/forgefit-logo-white.png"
-    : "/images/Logo/forgefit-logo-orange.png";
+  
+  let src: string;
+  if (variant === "light") {
+    src = "/images/Logo/forgefit-logo-orange.png";
+  } else if (variant === "dark") {
+    src = "/images/Logo/forgefit-logo-white.png";
+  } else {
+    // auto mode - use theme
+    src = theme === "dark"
+      ? "/images/Logo/forgefit-logo-white.png"
+      : "/images/Logo/forgefit-logo-orange.png";
+  }
   return (
     <Image
       src={src}

@@ -14,6 +14,7 @@ interface LogoProps {
 export function Logo({ className = "", width = 150, height = 40, alt = "ForgeFit Logo", variant = "auto" }: LogoProps) {
   const { theme } = useTheme();
   
+  // Force logo update for footer
   let src: string;
   if (variant === "light") {
     src = "/images/Logo/forgefit-logo-orange.png";

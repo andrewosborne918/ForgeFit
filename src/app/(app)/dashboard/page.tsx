@@ -435,8 +435,19 @@ interface UserProfile {
           json.id = `generated-${Date.now()}`;
         }
 
-        // FLATTEN the plan structure for activePlan and logs
-        const wrappedPlan = { ...json, image: json.imageUrl };
+        // Structure the plan data to match workout detail page expectations
+        const wrappedPlan = { 
+          id: json.id,
+          title: json.title,
+          image: json.imageUrl,
+          plan: {
+            title: json.title,
+            goal: json.goal,
+            duration: json.duration,
+            notes: json.notes,
+            workout: json.workout
+          }
+        };
         setCurrentWorkout(wrappedPlan); // Update the current workout state
         localStorage.setItem("activeWorkoutPlan", JSON.stringify(wrappedPlan));
 
@@ -446,8 +457,7 @@ interface UserProfile {
           if (json.id) {
             const logRef = doc(db, `users/${user.uid}/logs/${json.id}`);
             await setDoc(logRef, {
-              ...json,
-              image: json.imageUrl,
+              ...wrappedPlan,
               createdAt: new Date().toISOString(),
               timestamp: json.id.startsWith('generated-') ? Number(json.id.replace('generated-', '')) : Date.now(),
             });
@@ -455,7 +465,7 @@ interface UserProfile {
             // Add to completed plans list immediately for workout history
             const newCompletedPlan: CompletedPlan = {
               id: json.id,
-              plan: json,
+              plan: wrappedPlan,
               image: json.imageUrl,
               timestamp: json.id.startsWith('generated-') ? Number(json.id.replace('generated-', '')) : Date.now(),
               createdAt: new Date().toISOString(),
@@ -481,14 +491,14 @@ interface UserProfile {
             updatedSchedule[assigningWorkoutToDayIndex] = { 
               type: 'workout', 
               workoutDetails, 
-              workout: json // <-- use 'workout' instead of 'plan'
+              workout: wrappedPlan // <-- use properly structured plan
             };
             setWeeklySchedule(updatedSchedule);
             // Immediately persist this assignment to Firestore for the day, including the full plan as 'workout'
             await updateDayAssignmentInFirestore(assigningWorkoutToDayIndex, { 
               type: 'workout', 
               workoutDetails, 
-              workout: json // <-- use 'workout' instead of 'plan'
+              workout: wrappedPlan // <-- use properly structured plan
             });
           } else {
             // Enhanced warning message
@@ -857,11 +867,13 @@ interface UserProfile {
               {completedPlans.length > 0 ? (
                 <div className="flex-1 space-y-4 overflow-y-auto">
                   {completedPlans.map((p) => {
-                    const planTitle = p.plan?.title || "Unnamed Workout";
-                    const planDuration = p.plan?.duration 
-                      ? (typeof p.plan.duration === 'number' ? formatDuration(p.plan.duration) : p.plan.duration.toString())
+                    // Handle both old flat structure and new nested structure
+                    const planTitle = p.plan?.plan?.title || p.plan?.title || "Unnamed Workout";
+                    const planDurationValue = p.plan?.plan?.duration || p.plan?.duration;
+                    const planDuration = planDurationValue 
+                      ? (typeof planDurationValue === 'number' ? formatDuration(planDurationValue) : planDurationValue.toString())
                       : "Duration not set";
-                    const planImage = p.image || p.plan?.imageUrl;
+                    const planImage = p.image || p.plan?.imageUrl || p.plan?.image;
                     const planId = p.id;
                     const workoutDetailsForAssignment: WorkoutAssignmentDetails = {
                       planId: planId,
@@ -982,10 +994,10 @@ interface UserProfile {
                   
                   <div className="flex-1 flex flex-col justify-center mb-4">
                     <h3 className="text-xl font-bold text-primary dark:text-orange-400 mb-2">
-                      {currentWorkout.title || "Current Workout"}
+                      {currentWorkout.plan?.title || currentWorkout.title || "Current Workout"}
                     </h3>
                     <p className="text-sm text-muted-foreground dark:text-slate-400 mb-4">
-                      Duration: {currentWorkout.duration || "Not specified"}
+                      Duration: {currentWorkout.plan?.duration || currentWorkout.duration || "Not specified"}
                     </p>
                   </div>
                   

@@ -33,6 +33,7 @@ interface WorkoutPlan {
   title?: string;
   duration?: string | number;
   imageUrl?: string;
+  image?: string; // Support both image and imageUrl for backward compatibility
   plan?: {
     title?: string;
     duration?: string | number;
@@ -105,6 +106,7 @@ export default function DashboardPage() {
   const draggedWorkoutRef = useRef<WorkoutAssignmentDetails | null>(null);
 
   const [generatePlanCardImage, setGeneratePlanCardImage] = useState<string | null>(null);
+  const [currentWorkout, setCurrentWorkout] = useState<WorkoutPlan | null>(null);
   const [workoutDuration, setWorkoutDuration] = useState(45) 
   const [workoutType, setWorkoutType] = useState("fullBody") 
   
@@ -156,6 +158,15 @@ export default function DashboardPage() {
     };
     fetchWeeklySchedule();
   }, [user]);
+
+  // Load current active workout from userProfile
+  useEffect(() => {
+    if (userProfile?.activePlan) {
+      setCurrentWorkout(userProfile.activePlan);
+    } else {
+      setCurrentWorkout(null);
+    }
+  }, [userProfile]);
 
   // Always fetch the latest user profile from Firestore on mount or when user changes
   useEffect(() => {
@@ -426,8 +437,7 @@ interface UserProfile {
 
         // FLATTEN the plan structure for activePlan and logs
         const wrappedPlan = { ...json, image: json.imageUrl };
-        // setPlan(wrappedPlan);
-        // setPlanImage(json.imageUrl);
+        setCurrentWorkout(wrappedPlan); // Update the current workout state
         localStorage.setItem("activeWorkoutPlan", JSON.stringify(wrappedPlan));
 
         if (user) {
@@ -441,6 +451,16 @@ interface UserProfile {
               createdAt: new Date().toISOString(),
               timestamp: json.id.startsWith('generated-') ? Number(json.id.replace('generated-', '')) : Date.now(),
             });
+            
+            // Add to completed plans list immediately for workout history
+            const newCompletedPlan: CompletedPlan = {
+              id: json.id,
+              plan: json,
+              image: json.imageUrl,
+              timestamp: json.id.startsWith('generated-') ? Number(json.id.replace('generated-', '')) : Date.now(),
+              createdAt: new Date().toISOString(),
+            };
+            setCompletedPlans(prevPlans => [newCompletedPlan, ...prevPlans]);
           }
         }
 
@@ -925,37 +945,97 @@ interface UserProfile {
               )}
             </div>
           </div>
-          {/* Generate Plan Card */}
+          {/* Generate Plan Card or Current Workout Card */}
           <div className="flex-1 min-w-0 flex flex-col">
             <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg overflow-hidden flex flex-col items-center text-center p-6 md:p-8 h-[540px] justify-between">
-              {generatePlanCardImage ? (
-                <div className="w-full max-w-[220px] aspect-square relative mb-6 rounded-lg overflow-hidden">
-                  <Image
-                    src={generatePlanCardImage}
-                    alt="Generate new workout plan"
-                    fill
-                    sizes="(max-width: 768px) 100vw, 220px"
-                    className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
-                    priority
-                  />
-                </div>
+              {currentWorkout ? (
+                // Show current workout card
+                <>
+                  <div className="w-full flex justify-end mb-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsModalOpen(true)}
+                      className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                      title="Generate new workout"
+                    >
+                      <Repeat className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  
+                  {(currentWorkout.image || currentWorkout.imageUrl) ? (
+                    <div className="w-full max-w-[220px] aspect-square relative mb-4 rounded-lg overflow-hidden">
+                      <Image
+                        src={currentWorkout.image || currentWorkout.imageUrl!}
+                        alt={currentWorkout.title || "Current workout"}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 220px"
+                        className="object-cover"
+                        priority
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full max-w-[220px] aspect-square bg-slate-200 dark:bg-slate-700 flex items-center justify-center mb-4 rounded-lg">
+                      <ImageIcon className="h-20 w-20 text-slate-400 dark:text-slate-500" />
+                    </div>
+                  )}
+                  
+                  <div className="flex-1 flex flex-col justify-center mb-4">
+                    <h3 className="text-xl font-bold text-primary dark:text-orange-400 mb-2">
+                      {currentWorkout.title || "Current Workout"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground dark:text-slate-400 mb-4">
+                      Duration: {currentWorkout.duration || "Not specified"}
+                    </p>
+                  </div>
+                  
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="w-full max-w-xs bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+                    onClick={() => {
+                      if (currentWorkout.id && user) {
+                        router.push(`/workout/${user.uid}/${currentWorkout.id}`);
+                      }
+                    }}
+                    disabled={!currentWorkout.id}
+                  >
+                    <Zap className="mr-2 h-5 w-5" /> Start Workout
+                  </Button>
+                </>
               ) : (
-                <div className="w-full max-w-[220px] aspect-square bg-slate-200 dark:bg-slate-700 flex items-center justify-center mb-6 rounded-lg">
-                  <ImageIcon className="h-20 w-20 text-slate-400 dark:text-slate-500" />
-                </div>
+                // Show generate plan card
+                <>
+                  {generatePlanCardImage ? (
+                    <div className="w-full max-w-[220px] aspect-square relative mb-6 rounded-lg overflow-hidden">
+                      <Image
+                        src={generatePlanCardImage}
+                        alt="Generate new workout plan"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 220px"
+                        className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+                        priority
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full max-w-[220px] aspect-square bg-slate-200 dark:bg-slate-700 flex items-center justify-center mb-6 rounded-lg">
+                      <ImageIcon className="h-20 w-20 text-slate-400 dark:text-slate-500" />
+                    </div>
+                  )}
+                  <h3 className="text-xl font-bold text-primary dark:text-orange-400 mb-2">Generate a Single Plan</h3>
+                  <p className="text-sm text-muted-foreground dark:text-slate-400 mb-4 max-w-xs">
+                    Ready to forge your best self? Let our AI craft a personalized workout plan just for you.
+                  </p>
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="w-full max-w-xs bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 mt-auto"
+                    onClick={() => setIsModalOpen(true)}
+                  >
+                    <Zap className="mr-2 h-5 w-5" /> Generate New Plan
+                  </Button>
+                </>
               )}
-              <h3 className="text-xl font-bold text-primary dark:text-orange-400 mb-2">Generate a Single Plan</h3>
-              <p className="text-sm text-muted-foreground dark:text-slate-400 mb-4 max-w-xs">
-                Ready to forge your best self? Let our AI craft a personalized workout plan just for you.
-              </p>
-              <Button
-                variant="default"
-                size="lg"
-                className="w-full max-w-xs bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 mt-auto"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <Zap className="mr-2 h-5 w-5" /> Generate New Plan
-              </Button>
             </div>
           </div>
         </div>

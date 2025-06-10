@@ -442,9 +442,9 @@ interface UserProfile {
           image: json.imageUrl,
           plan: {
             title: json.title,
-            goal: json.goal,
+            goal: userProfile?.goals || "General Fitness", // Use user's actual goal from profile
             duration: json.duration,
-            notes: json.notes,
+            notes: json.notes || "", // Provide fallback for undefined notes
             workout: json.workout
           }
         };
@@ -452,12 +452,26 @@ interface UserProfile {
         localStorage.setItem("activeWorkoutPlan", JSON.stringify(wrappedPlan));
 
         if (user) {
-          await setDoc(doc(db, "users", user.uid), { activePlan: wrappedPlan }, { merge: true });
+          // Ensure no undefined values before saving to Firebase
+          const cleanWrappedPlan = {
+            ...wrappedPlan,
+            plan: {
+              ...wrappedPlan.plan,
+              goal: userProfile?.goals || "General Fitness", // Use user's actual goal
+              notes: wrappedPlan.plan.notes || ""
+            }
+          };
+          await setDoc(doc(db, "users", user.uid), { activePlan: cleanWrappedPlan }, { merge: true });
           // --- Ensure generated plan is also saved to logs for detail page access ---
           if (json.id) {
             const logRef = doc(db, `users/${user.uid}/logs/${json.id}`);
             await setDoc(logRef, {
               ...wrappedPlan,
+              plan: {
+                ...wrappedPlan.plan,
+                goal: userProfile?.goals || "General Fitness", // Use user's actual goal
+                notes: wrappedPlan.plan.notes || ""
+              },
               createdAt: new Date().toISOString(),
               timestamp: json.id.startsWith('generated-') ? Number(json.id.replace('generated-', '')) : Date.now(),
             });
@@ -491,14 +505,28 @@ interface UserProfile {
             updatedSchedule[assigningWorkoutToDayIndex] = { 
               type: 'workout', 
               workoutDetails, 
-              workout: wrappedPlan // <-- use properly structured plan
+              workout: {
+                ...wrappedPlan,
+                plan: {
+                  ...wrappedPlan.plan,
+                  goal: userProfile?.goals || "General Fitness", // Use user's actual goal
+                  notes: wrappedPlan.plan.notes || ""
+                }
+              }
             };
             setWeeklySchedule(updatedSchedule);
             // Immediately persist this assignment to Firestore for the day, including the full plan as 'workout'
             await updateDayAssignmentInFirestore(assigningWorkoutToDayIndex, { 
               type: 'workout', 
               workoutDetails, 
-              workout: wrappedPlan // <-- use properly structured plan
+              workout: {
+                ...wrappedPlan,
+                plan: {
+                  ...wrappedPlan.plan,
+                  goal: userProfile?.goals || "General Fitness", // Use user's actual goal
+                  notes: wrappedPlan.plan.notes || ""
+                }
+              }
             });
           } else {
             // Enhanced warning message

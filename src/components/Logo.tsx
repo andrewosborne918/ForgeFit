@@ -19,13 +19,19 @@ export function Logo({ className = "", width = 150, height = 40, alt = "ForgeFit
   if (variant === "light") {
     src = "/images/Logo/forgefit-logo-orange.png";
   } else if (variant === "dark") {
-    src = "/images/Logo/forgefit-logo-white.png";
+    src = "/images/Logo/forgefit-logo-all-white.png";
   } else {
     // auto mode - use theme
     src = theme === "dark"
       ? "/images/Logo/forgefit-logo-white.png"
       : "/images/Logo/forgefit-logo-orange.png";
   }
+  
+  // Debug logging for footer logo
+  if (typeof window !== 'undefined' && variant === "dark") {
+    console.log("Footer logo should use white:", src);
+  }
+  
   return (
     <Image
       src={src}

@@ -366,59 +366,27 @@ interface UserProfile {
 
       const data = await res.json()
       let raw = data?.text || ""
-      raw = raw.trim();
-
-      const prefixSignatures = ["```json\n", "```json", "```"];
-      const suffixSignatures = ["\n```", "```"];
-
-      for (const prefix of prefixSignatures) {
-        if (raw.startsWith(prefix)) {
-          raw = raw.substring(prefix.length);
-          break;
-        }
-      }
-
-      for (const suffix of suffixSignatures) {
-        if (raw.endsWith(suffix)) {
-          raw = raw.substring(0, raw.length - suffix.length);
-          break;
-        }
-      }
-      raw = raw.trim(); 
-
-      raw = raw.replace(/[“”‘’]/g, '"');
-      raw = raw.replace(/"nu"ll/g, 'null'); // Keep this for "nu"ll
-      raw = raw.replace(new RegExp("//.*|/\\\\*[\\\\s\\\\S]*?\\\\*/", "g"), ''); // Remove comments
-
-      // Attempt to fix unquoted keys and string values more robustly
-      // Add quotes to keys: { key: "value" } -> { "key": "value" }
-      raw = raw.replace(/([{,])\\\\s*([a-zA-Z0-9_]+)\\\\s*:/g, '$1"$2":');
       
-      // Add quotes to unquoted string values that are not true, false, or null, or numbers
-      // This is tricky and might need refinement.
-      // It tries to capture: : value, or : value} or : value]
-      // and avoids : "quoted", : true, : false, : null, : 123
-      raw = raw.replace(/:\\\\s*(?!\\\\s*["\\\\d]|\\\\s*true|\\\\s*false|\\\\s*null)([a-zA-Z0-9_\\\\s\\\\S]+?)\\\\s*([,}])/g, (match: string, val: string, endChar: string) => {
-        // Trim the value and if it's multi-word or contains special chars (heuristics), quote it.
-        // This is a common source of errors.
-        const trimmedVal = val.trim();
-        if (trimmedVal.includes(' ') || !/^[a-zA-Z0-9_]*$/.test(trimmedVal) || isNaN(parseFloat(trimmedVal))) {
-          return `: "${trimmedVal.replace(/"/g, '\\\\\\"').replace(/\\\\n/g, '\\\\\\\\n')}"${endChar}`;
-        }
-        return `: ${trimmedVal}${endChar}`; // If simple, leave as is (might be a number or intended unquoted)
-      });
-      
-      raw = raw.split('\\\\n').filter((line: string) => line.trim() !== '').join('\\\\n'); // Remove empty lines again
+      // Simple cleaning - just remove markdown code blocks if present
       raw = raw.trim();
       
-      // Original regex for numbers that might have a quote, restored
-      raw = raw.replace(/(:\\\\s*)([0-9]+(?:-[0-9]+)?)"/g, '$1"$2"'); 
+      // Remove markdown code blocks
+      if (raw.startsWith('```json')) {
+        raw = raw.replace(/^```json\s*/, '');
+      }
+      if (raw.startsWith('```')) {
+        raw = raw.replace(/^```\s*/, '');
+      }
+      if (raw.endsWith('```')) {
+        raw = raw.replace(/\s*```$/, '');
+      }
       
-      // Remove trailing commas before } or ]
-      raw = raw.replace(/,\\\\s*([}\\\\]])/g, '$1');
       raw = raw.trim(); 
 
-      console.log("Cleaned raw JSON string before parsing:", raw); // Log the string that will be parsed
+      // Basic cleanup - only fix trailing commas which are common in AI responses
+      raw = raw.replace(/,\s*([}\]])/g, '$1');
+
+      console.log("Raw JSON from AI:", raw);
 
       try {
         const json = JSON.parse(raw);

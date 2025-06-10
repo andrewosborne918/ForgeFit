@@ -19,7 +19,7 @@ export function Logo({ className = "", width = 150, height = 40, alt = "ForgeFit
   if (variant === "light") {
     src = "/images/Logo/forgefit-logo-orange.png";
   } else if (variant === "dark") {
-    src = "/images/Logo/forgefit-logo-all-white.png";
+    src = "/images/Logo/forgefit-logo-white.png";
   } else {
     // auto mode - use theme
     src = theme === "dark"

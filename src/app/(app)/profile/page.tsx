@@ -31,13 +31,13 @@ export default function ProfilePage() {
   const [error, setError] = useState("")
 
   useEffect(() => {
-    if (!app) {
+    if (!app || !isFirebaseConfigured) {
       console.error("Firebase app not initialized");
       return;
     }
     const auth = getAuth(app)
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user && app) {
+      if (user && app && isFirebaseConfigured) {
         const db = getFirestore(app)
         const userRef = doc(db, "users", user.uid)
         const docSnap = await getDoc(userRef)

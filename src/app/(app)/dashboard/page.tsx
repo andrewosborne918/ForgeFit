@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext'; // Changed useAuth to useAppContext
 import { useRouter } from 'next/navigation';
-import { app } from '@/lib/firebase'; // Import app
+import { app, isFirebaseConfigured } from '@/lib/firebase'; // Import app and isFirebaseConfigured
 import { getFirestore, setDoc, doc, collection, query, orderBy, getDocs, deleteDoc, getDoc, writeBatch } from 'firebase/firestore'; // Import firestore functions
 // import LOADING_MESSAGES from "@/lib/loadingMessages" 
 import Image from "next/image" 
@@ -136,7 +136,7 @@ export default function DashboardPage() {
   // All useEffect hooks must be called before any early returns
   // 1. On mount, load weeklySchedule from Firestore subcollection (users/{uid}/weeklySchedule/{dayIndex})
   useEffect(() => {
-    if (!user || !app) return;
+    if (!user || !app || !isFirebaseConfigured) return;
     const db = getFirestore(app);
     const fetchWeeklySchedule = async () => {
       try {
@@ -159,7 +159,7 @@ export default function DashboardPage() {
 
   // Always fetch the latest user profile from Firestore on mount or when user changes
   useEffect(() => {
-    if (!user || !app) {
+    if (!user || !app || !isFirebaseConfigured) {
       console.log("Dashboard ProfileFetch: No user or app, skipping profile fetch.");
       return;
     }
@@ -197,7 +197,7 @@ export default function DashboardPage() {
   }, [userProfile?.gender]);
 
   useEffect(() => {
-    if (user && app) {
+    if (user && app && isFirebaseConfigured) {
       const db = getFirestore(app);
       const fetchCompletedPlans = async () => {
         // db is already initialized
@@ -223,7 +223,7 @@ export default function DashboardPage() {
   }, [user]); 
 
   // Handle Firebase app initialization safely - moved after all hooks
-  if (!app) {
+  if (!app || !isFirebaseConfigured) {
     console.error("Firebase app not initialized");
     return <div>Firebase configuration error</div>;
   }

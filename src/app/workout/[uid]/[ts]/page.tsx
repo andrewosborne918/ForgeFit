@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import Head from 'next/head'; // Ensure Head is imported
 import { useParams, useRouter } from "next/navigation"
+import { getFirestore, doc, getDoc } from "firebase/firestore"
+import { app, isFirebaseConfigured } from "@/lib/firebase"
 import Image from 'next/image'; // Ensure Image is imported
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, CheckCircle2, Info, BadgeCheck, Loader2, Mail, Facebook, X, Printer } from "lucide-react"
@@ -144,12 +146,12 @@ export default function WorkoutDetailPage() {
   useEffect(() => {
     console.log("WorkoutDetailPage EFFECT 2: pageState:", pageState, "plan:", plan ? "exists" : "null");
 
-    if (pageState === "planLoading" && uid && ts && !plan && app) {
+    if (pageState === "planLoading" && uid && ts && !plan && app && isFirebaseConfigured) {
       let isActive = true; // Prevent state updates if component unmounts during async operation
 
       const fetchWorkoutData = async () => {
         try {
-          if (!app) {
+          if (!app || !isFirebaseConfigured) {
             console.error("Firebase app not initialized");
             return;
           }

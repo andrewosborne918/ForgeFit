@@ -335,35 +335,11 @@ export default function WorkoutDetailPage() {
 
   // If pageState is "planLoaded" and plan exists, render the content
   if (pageState === "planLoaded" && plan) {
-    // const pageUrl = typeof window !== 'undefined' ? window.location.href : `https://forgefit.pro/workout/${uid}/${ts}`;
     const workoutTitle = plan.plan?.title || "ForgeFit Workout";
-    
-    // OG Tag values
-    const ogTitle = plan.plan?.title || "Workout Plan";
+    const pageOgUrl = `https://www.forgefit.pro/workout/${uid}/${ts}`;
     const ogDescription = "Join me on ForgeFit and try this custom AI-generated workout!";
-    const pageOgUrl = `https://forgefit.pro/workout/${uid}/${ts}`;
-    
-    // Generate social media image URL
-    const workoutImagePath = plan.image ? encodeURIComponent(plan.image) : '';
-    const workoutTitleEncoded = encodeURIComponent(workoutTitle);
-    const workoutDuration = plan.plan?.duration ? encodeURIComponent(plan.plan.duration.toString()) : '';
-    const socialImageUrl = `https://forgefit.pro/api/generate-social-image?workoutImage=${workoutImagePath}&title=${workoutTitleEncoded}&duration=${workoutDuration}`;
-    
-    // For now, let's try both the generated image AND add some fallbacks
-    // Use original workout image as fallback since social media crawlers might not handle API endpoints well
-    const fallbackImage = plan.image ? `https://forgefit.pro/${plan.image}` : "https://forgefit.pro/api/default-social-image";
-    const ogImage = plan.image ? socialImageUrl : fallbackImage;
 
-    // Debug logging (will show in server console)
-    console.log('Social sharing debug:', {
-      workoutTitle,
-      workoutImagePath: plan.image,
-      socialImageUrl,
-      fallbackImage,
-      ogImage
-    });
-
-    // Share message definitions
+    // Share message definitions  
     const emailSubject = `Check out this ForgeFit Workout: ${workoutTitle}`;
     const emailBody = `I thought you might like this workout I found on ForgeFit! Perfect for ${plan.plan?.goal || 'achieving your fitness goals'}. You can view it here: ${pageOgUrl}`;
     const xShareMessage = `Just finished a great workout: "${workoutTitle}" on ForgeFit! ${ogDescription}`;

@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Head from 'next/head'; // Ensure Head is imported
 import { useParams, useRouter } from "next/navigation"
 import { getFirestore, doc, getDoc } from "firebase/firestore"
 import { app, isFirebaseConfigured } from "@/lib/firebase"
@@ -350,8 +349,19 @@ export default function WorkoutDetailPage() {
     const workoutDuration = plan.plan?.duration ? encodeURIComponent(plan.plan.duration.toString()) : '';
     const socialImageUrl = `https://forgefit.pro/api/generate-social-image?workoutImage=${workoutImagePath}&title=${workoutTitleEncoded}&duration=${workoutDuration}`;
     
-    // Use generated social image or fallback
-    const ogImage = plan.image ? socialImageUrl : "https://forgefit.pro/default.jpg";
+    // For now, let's try both the generated image AND add some fallbacks
+    // Use original workout image as fallback since social media crawlers might not handle API endpoints well
+    const fallbackImage = plan.image ? `https://forgefit.pro/${plan.image}` : "https://forgefit.pro/api/default-social-image";
+    const ogImage = plan.image ? socialImageUrl : fallbackImage;
+
+    // Debug logging (will show in server console)
+    console.log('Social sharing debug:', {
+      workoutTitle,
+      workoutImagePath: plan.image,
+      socialImageUrl,
+      fallbackImage,
+      ogImage
+    });
 
     // Share message definitions
     const emailSubject = `Check out this ForgeFit Workout: ${workoutTitle}`;

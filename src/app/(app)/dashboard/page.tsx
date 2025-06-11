@@ -438,15 +438,17 @@ interface UserProfile {
         }
 
         // Structure the plan data to match workout detail page expectations
+        const goalString = Array.isArray(userProfile?.goals) 
+          ? userProfile.goals.join(", ") 
+          : (typeof userProfile?.goals === 'string' ? userProfile.goals : "General Fitness");
+
         const wrappedPlan = { 
           id: json.id,
           title: json.title,
           image: json.imageUrl,
           plan: {
             title: json.title,
-            goal: Array.isArray(userProfile?.goals) 
-              ? userProfile.goals.join(", ") 
-              : (userProfile?.goals || "General Fitness"), // Convert array to string or use fallback
+            goal: goalString,
             duration: json.duration,
             notes: json.notes || "", // Provide fallback for undefined notes
             workout: json.workout
@@ -461,9 +463,7 @@ interface UserProfile {
             ...wrappedPlan,
             plan: {
               ...wrappedPlan.plan,
-              goal: Array.isArray(userProfile?.goals) 
-                ? userProfile.goals.join(", ") 
-                : (userProfile?.goals || "General Fitness"), // Convert array to string or use fallback
+              goal: goalString, // Use the same converted string
               notes: wrappedPlan.plan.notes || ""
             }
           };
@@ -475,9 +475,7 @@ interface UserProfile {
               ...wrappedPlan,
               plan: {
                 ...wrappedPlan.plan,
-                goal: Array.isArray(userProfile?.goals) 
-                  ? userProfile.goals.join(", ") 
-                  : (userProfile?.goals || "General Fitness"), // Convert array to string or use fallback
+                goal: goalString, // Use the same converted string
                 notes: wrappedPlan.plan.notes || ""
               },
               createdAt: new Date().toISOString(),
@@ -517,9 +515,7 @@ interface UserProfile {
                 ...wrappedPlan,
                 plan: {
                   ...wrappedPlan.plan,
-                  goal: Array.isArray(userProfile?.goals) 
-                    ? userProfile.goals.join(", ") 
-                    : (userProfile?.goals || "General Fitness"),
+                  goal: goalString, // Use the same converted string
                   notes: wrappedPlan.plan.notes || ""
                 }
               }
@@ -533,9 +529,7 @@ interface UserProfile {
                 ...wrappedPlan,
                 plan: {
                   ...wrappedPlan.plan,
-                  goal: Array.isArray(userProfile?.goals) 
-                    ? userProfile.goals.join(", ") 
-                    : (userProfile?.goals || "General Fitness"),
+                  goal: goalString, // Use the same converted string
                   notes: wrappedPlan.plan.notes || ""
                 }
               }

@@ -48,6 +48,7 @@ export default function ProfilePage() {
   // Function to refresh subscription data
   const refreshSubscriptionData = async (userId: string) => {
     try {
+      console.log(`🔄 Refreshing subscription data for user: ${userId}`)
       if (!app || !isFirebaseConfigured) return
       
       const db = getFirestore(app)
@@ -55,16 +56,21 @@ export default function ProfilePage() {
       const docSnap = await getDoc(userRef)
       const userData = docSnap.exists() ? docSnap.data() : null
       
+      console.log(`📊 User data from Firestore:`, userData)
+      
       if (userData) {
-        setSubscriptionData({
+        const newSubscriptionData = {
           isSubscribed: userData.isSubscribed || false,
           workoutCount: userData.workoutCount || 0,
           currentPeriodEnd: userData.currentPeriodEnd?.toDate(),
           subscriptionId: userData.subscriptionId
-        })
+        }
+        
+        console.log(`✅ Setting new subscription data:`, newSubscriptionData)
+        setSubscriptionData(newSubscriptionData)
       }
     } catch (error) {
-      console.error("Error refreshing subscription data:", error)
+      console.error("❌ Error refreshing subscription data:", error)
     }
   }
 
@@ -114,7 +120,16 @@ export default function ProfilePage() {
       }
     }
 
+    const handleWorkoutGenerated = (event: Event) => {
+      const customEvent = event as CustomEvent
+      if (user && customEvent.detail?.userId === user.uid) {
+        console.log('Workout generated detected, refreshing subscription data')
+        refreshSubscriptionData(user.uid)
+      }
+    }
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('workoutGenerated', handleWorkoutGenerated)
     
     // Also refresh when the component mounts and user is available
     if (user) {
@@ -123,6 +138,7 @@ export default function ProfilePage() {
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('workoutGenerated', handleWorkoutGenerated)
     }
   }, [user])
 

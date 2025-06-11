@@ -120,6 +120,7 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
     // Increment workout count for the user
     try {
       if (adminDB) {
+        console.log(`Attempting to increment workout count for user: ${userId}`);
         const userDoc = await adminDB.collection('users').doc(userId).get();
         const currentCount = userDoc.data()?.workoutCount || 0;
         
@@ -128,10 +129,17 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
           lastWorkoutGenerated: new Date(),
         }, { merge: true });
         
-        console.log(`Updated workout count for user ${userId}: ${currentCount} -> ${currentCount + 1}`);
+        console.log(`✅ Successfully updated workout count for user ${userId}: ${currentCount} -> ${currentCount + 1}`);
+        
+        // Verify the update worked
+        const verifyDoc = await adminDB.collection('users').doc(userId).get();
+        const newCount = verifyDoc.data()?.workoutCount || 0;
+        console.log(`✅ Verified new workout count: ${newCount}`);
+      } else {
+        console.warn("❌ Firebase Admin DB not available, workout count will not be updated");
       }
     } catch (error) {
-      console.error("Error updating workout count:", error);
+      console.error("❌ Error updating workout count:", error);
       // Don't fail the request if we can't update the count
     }
     

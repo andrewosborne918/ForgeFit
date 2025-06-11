@@ -574,6 +574,12 @@ interface UserProfile {
         if (userProfile?.gender) {
           setGeneratePlanCardImage(getNextWorkoutImage(userProfile.gender));
         }
+        
+        // Notify other components that a workout has been generated
+        localStorage.setItem('lastWorkoutGenerated', Date.now().toString());
+        window.dispatchEvent(new CustomEvent('workoutGenerated', { 
+          detail: { userId: user.uid, timestamp: Date.now() } 
+        }));
       } catch (parseError: unknown) {
         console.error("Failed to parse cleaned JSON:", parseError);
         console.error("Problematic raw string:", raw); // Log the string that caused the error

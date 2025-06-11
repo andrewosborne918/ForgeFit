@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: "Missing userId in request body" });
   }
 
-  // Check user subscription status and workout count
+  // Check user subscription status and workout count with proper debugging
   try {
     if (!adminDB) {
       console.warn("Firebase Admin not configured, skipping subscription check");
@@ -43,10 +43,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const plan = profile?.plan || 'free';
         const workoutsGenerated = profile?.workoutsGenerated || 0;
         
+        console.log(`🔍 Checking limits for user ${userId}:`);
+        console.log(`   Plan: ${plan}`);
+        console.log(`   Workouts Generated: ${workoutsGenerated}`);
+        console.log(`   Is Premium: ${plan === 'premium'}`);
+        console.log(`   Should Block: ${plan !== 'premium' && workoutsGenerated >= 3}`);
+        
         // If user is on free plan and has generated 3 or more workouts, deny access
         if (plan !== 'premium' && workoutsGenerated >= 3) {
+          console.log(`❌ BLOCKING: User ${userId} has reached free limit (${workoutsGenerated}/3)`);
           return res.status(403).json({ error: "Free limit reached. Upgrade to generate more." });
         }
+        
+        console.log(`✅ ALLOWING: User ${userId} can generate workout (${workoutsGenerated}/3)`);
+      } else {
+        console.log(`⚠️ User document does not exist for ${userId}, treating as new user`);
       }
     }
   } catch (error) {
@@ -121,10 +132,12 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
     // Increment workout count for the user
     try {
       if (adminDB) {
-        console.log(`Attempting to increment workoutsGenerated for user: ${userId}`);
+        console.log(`🔄 Attempting to increment workoutsGenerated for user: ${userId}`);
         const userDoc = await adminDB.collection('users').doc(userId).get();
         const currentProfile = userDoc.data()?.profile || {};
         const currentCount = currentProfile?.workoutsGenerated || 0;
+        
+        console.log(`   Current count before increment: ${currentCount}`);
         
         await adminDB.collection('users').doc(userId).set({
           profile: {
@@ -140,6 +153,11 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
         const verifyDoc = await adminDB.collection('users').doc(userId).get();
         const newCount = verifyDoc.data()?.profile?.workoutsGenerated || 0;
         console.log(`✅ Verified new workoutsGenerated count: ${newCount}`);
+        
+        // Log if user is now at the limit
+        if (newCount >= 3) {
+          console.log(`⚠️ User ${userId} has now reached the free limit (${newCount}/3). Next generation should be blocked.`);
+        }
       } else {
         console.warn("❌ Firebase Admin DB not available, workout count will not be updated");
       }

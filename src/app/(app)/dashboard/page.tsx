@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext'; // Changed useAuth to useAppContext
 import { useRouter } from 'next/navigation';
 import { app, isFirebaseConfigured } from '@/lib/firebase'; // Import app and isFirebaseConfigured
-import { getFirestore, setDoc, doc, collection, query, orderBy, getDocs, deleteDoc, getDoc, writeBatch, updateDoc, increment } from 'firebase/firestore'; // Import firestore functions
+import { getFirestore, setDoc, doc, collection, query, orderBy, getDocs, deleteDoc, getDoc, writeBatch } from 'firebase/firestore'; // Import firestore functions
 // import LOADING_MESSAGES from "@/lib/loadingMessages" 
 import Image from "next/image" 
 import { Button } from "@/components/ui/button" 
@@ -372,12 +372,20 @@ interface UserProfile {
     }
 
     // Check subscription limit on client-side
+    console.log(`🔍 Client-side limit check for user:`)
+    console.log(`   Plan: ${userProfile?.plan}`)
+    console.log(`   Workouts Generated: ${userProfile?.workoutsGenerated}`)
+    console.log(`   Is Premium: ${userProfile?.plan === "premium"}`)
+    console.log(`   Should Block: ${userProfile?.plan !== "premium" && (userProfile?.workoutsGenerated || 0) >= 3}`)
+    
     if (userProfile?.plan !== "premium" && (userProfile?.workoutsGenerated || 0) >= 3) {
-      console.log("Free limit reached, showing subscription modal");
+      console.log("❌ CLIENT BLOCKING: Free limit reached, showing subscription modal");
       setGenerating(false);
       setIsSubscriptionModalOpen(true);
       return;
     }
+    
+    console.log("✅ CLIENT ALLOWING: User can generate workout");
 
     try {
       const requestBody = preferences ? 
@@ -580,19 +588,7 @@ interface UserProfile {
           setGeneratePlanCardImage(getNextWorkoutImage(userProfile.gender));
         }
         
-        // Increment workout count in Firestore client-side
-        if (user && app && isFirebaseConfigured) {
-          try {
-            const db = getFirestore(app);
-            const userRef = doc(db, "users", user.uid);
-            await updateDoc(userRef, {
-              "profile.workoutsGenerated": increment(1)
-            });
-            console.log("✅ Client-side workout count incremented");
-          } catch (error) {
-            console.error("❌ Error incrementing client-side workout count:", error);
-          }
-        }
+        // Note: Workout count is incremented server-side in generate-plan API to prevent double counting
         
         // Notify other components that a workout has been generated
         localStorage.setItem('lastWorkoutGenerated', Date.now().toString());

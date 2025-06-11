@@ -45,6 +45,29 @@ export default function ProfilePage() {
   })
   const [billingLoading, setBillingLoading] = useState(false)
 
+  // Function to refresh subscription data
+  const refreshSubscriptionData = async (userId: string) => {
+    try {
+      if (!app || !isFirebaseConfigured) return
+      
+      const db = getFirestore(app)
+      const userRef = doc(db, "users", userId)
+      const docSnap = await getDoc(userRef)
+      const userData = docSnap.exists() ? docSnap.data() : null
+      
+      if (userData) {
+        setSubscriptionData({
+          isSubscribed: userData.isSubscribed || false,
+          workoutCount: userData.workoutCount || 0,
+          currentPeriodEnd: userData.currentPeriodEnd?.toDate(),
+          subscriptionId: userData.subscriptionId
+        })
+      }
+    } catch (error) {
+      console.error("Error refreshing subscription data:", error)
+    }
+  }
+
   useEffect(() => {
     if (!app || !isFirebaseConfigured) {
       console.error("Firebase app not initialized");
@@ -82,6 +105,26 @@ export default function ProfilePage() {
     })
     return () => unsubscribe()
   }, [])
+
+  // Refresh subscription data when the page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        refreshSubscriptionData(user.uid)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Also refresh when the component mounts and user is available
+    if (user) {
+      refreshSubscriptionData(user.uid)
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [user])
 
   const handleSave = async () => {
     setLoading(true)

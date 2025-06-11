@@ -120,10 +120,15 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
     // Increment workout count for the user
     try {
       if (adminDB) {
+        const userDoc = await adminDB.collection('users').doc(userId).get();
+        const currentCount = userDoc.data()?.workoutCount || 0;
+        
         await adminDB.collection('users').doc(userId).set({
-          workoutCount: (await adminDB.collection('users').doc(userId).get()).data()?.workoutCount + 1 || 1,
+          workoutCount: currentCount + 1,
           lastWorkoutGenerated: new Date(),
         }, { merge: true });
+        
+        console.log(`Updated workout count for user ${userId}: ${currentCount} -> ${currentCount + 1}`);
       }
     } catch (error) {
       console.error("Error updating workout count:", error);

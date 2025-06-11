@@ -128,6 +128,9 @@ export default function DashboardPage() {
   const [isDayOptionsModalOpen, setIsDayOptionsModalOpen] = useState(false);
   const [assigningWorkoutToDayIndex, setAssigningWorkoutToDayIndex] = useState<number | null>(null);
 
+  // Subscription modal state
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+
   // const [isAssignToDayModalOpen, setIsAssignToDayModalOpen] = useState(false);
   // const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutAssignmentDetails | null>(null);
 
@@ -365,17 +368,32 @@ interface UserProfile {
     //     getRandomLoadingMessage();
     // }, 3000); 
 
+    if (!user) {
+      console.error("User not authenticated");
+      setGenerating(false);
+      return;
+    }
 
     try {
       const requestBody = preferences ? 
-        { userProfile, preferences } : 
-        { userProfile };
+        { userProfile, preferences, userId: user.uid } : 
+        { userProfile, userId: user.uid };
 
       const res = await fetch("/api/generate-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody) 
       })
+
+      // Check if the response indicates subscription limit exceeded
+      if (res.status === 403) {
+        const errorData = await res.json();
+        if (errorData.error === "limit-exceeded") {
+          setGenerating(false);
+          setIsSubscriptionModalOpen(true);
+          return;
+        }
+      }
 
       const data = await res.json()
       let raw = data?.text || ""
@@ -1369,6 +1387,63 @@ interface UserProfile {
               onClick={handleClearAllAssignments}
             >
               Yes, Clear All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Subscription Limit Modal */}
+      <Dialog open={isSubscriptionModalOpen} onOpenChange={setIsSubscriptionModalOpen}>
+        <DialogContent className="bg-white dark:bg-slate-900 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-slate-800 dark:text-slate-100">Upgrade to Premium</DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-400">
+              You&apos;ve reached your free workout limit. Subscribe to unlock unlimited workouts.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col space-y-4 py-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-orange-500 mb-2">$9.99/month</div>
+              <ul className="text-left space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                <li>✓ Unlimited AI-generated workout plans</li>
+                <li>✓ Personalized to your goals & equipment</li>
+                <li>✓ Detailed progress tracking & analytics</li>
+                <li>✓ Full exercise library access</li>
+                <li>✓ Weekly workout schedule</li>
+                <li>✓ Priority support</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <DialogClose asChild>
+              <Button variant="outline" className="dark:text-slate-300">
+                Maybe Later
+              </Button>
+            </DialogClose>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+              onClick={async () => {
+                if (!user) return;
+                try {
+                  const response = await fetch('/api/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.uid,
+                      email: user.email
+                    })
+                  });
+                  
+                  const { url } = await response.json();
+                  if (url) {
+                    window.location.href = url;
+                  }
+                } catch (error) {
+                  console.error('Error creating checkout session:', error);
+                }
+              }}
+            >
+              Subscribe Now
             </Button>
           </DialogFooter>
         </DialogContent>

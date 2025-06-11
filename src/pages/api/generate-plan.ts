@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextApiRequest, NextApiResponse } from 'next';
+import { adminDB } from '../../lib/firebase-admin';
 
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
@@ -17,11 +18,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   // Validate request body
-  const { userProfile, preferences } = req.body || {};
+  const { userProfile, preferences, userId } = req.body || {};
   
   if (!userProfile) {
     console.error("Missing userProfile in request body");
     return res.status(400).json({ error: "Missing userProfile in request body" });
+  }
+
+  if (!userId) {
+    console.error("Missing userId in request body");
+    return res.status(400).json({ error: "Missing userId in request body" });
+  }
+
+  // Check user subscription status and workout count
+  try {
+    if (!adminDB) {
+      console.warn("Firebase Admin not configured, skipping subscription check");
+    } else {
+      const userDoc = await adminDB.collection('users').doc(userId).get();
+      
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const isSubscribed = userData?.isSubscribed || false;
+        const workoutCount = userData?.workoutCount || 0;
+        
+        // If user is not subscribed and has generated 3 or more workouts, deny access
+        if (!isSubscribed && workoutCount >= 3) {
+          return res.status(403).json({ error: "limit-exceeded" });
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error checking user subscription:", error);
+    // Continue with generation if there's an error checking subscription
   }
 
   console.log("Generating workout plan for user:", userProfile);
@@ -87,6 +116,19 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
     const text = await response.text();
     
     console.log("Generated text:", text.substring(0, 200) + "...");
+    
+    // Increment workout count for the user
+    try {
+      if (adminDB) {
+        await adminDB.collection('users').doc(userId).set({
+          workoutCount: (await adminDB.collection('users').doc(userId).get()).data()?.workoutCount + 1 || 1,
+          lastWorkoutGenerated: new Date(),
+        }, { merge: true });
+      }
+    } catch (error) {
+      console.error("Error updating workout count:", error);
+      // Don't fail the request if we can't update the count
+    }
     
     res.status(200).json({ text });
   } catch (error) {

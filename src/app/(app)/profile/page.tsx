@@ -6,6 +6,7 @@ import {
   getAuth,
   onAuthStateChanged,
   User,
+  sendPasswordResetEmail,
 } from "firebase/auth"
 import {
   getFirestore,
@@ -21,7 +22,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { BackgroundGrid } from "@/components/BackgroundGrid"
 import { Logo } from "@/components/Logo"
-import { CreditCard, Crown, Calendar, ExternalLink } from "lucide-react"
+import { CreditCard, Crown, Calendar, ExternalLink, Mail, Lock } from "lucide-react"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -44,6 +45,7 @@ export default function ProfilePage() {
     workoutsGenerated: 0
   })
   const [billingLoading, setBillingLoading] = useState(false)
+  const [passwordResetLoading, setPasswordResetLoading] = useState(false)
 
   // Function to refresh subscription data
   const refreshSubscriptionData = async (userId: string) => {
@@ -228,6 +230,28 @@ export default function ProfilePage() {
     }
   }
 
+  const handlePasswordReset = async () => {
+    if (!user?.email) {
+      toast.error('No email address found for password reset')
+      return
+    }
+
+    setPasswordResetLoading(true)
+    try {
+      if (!app) {
+        throw new Error("Firebase app not initialized");
+      }
+      const auth = getAuth(app)
+      await sendPasswordResetEmail(auth, user.email)
+      toast.success(`Password reset email sent to ${user.email}`)
+    } catch (error) {
+      console.error('Error sending password reset email:', error)
+      toast.error('Failed to send password reset email. Please try again.')
+    } finally {
+      setPasswordResetLoading(false)
+    }
+  }
+
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 py-12">
       {/* Background Grid */}
@@ -305,6 +329,38 @@ export default function ProfilePage() {
                   </Button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* Account Information Section */}
+        <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-6 border border-slate-200 dark:border-slate-600">
+          <div className="flex items-center gap-3 mb-4">
+            <Mail className="h-5 w-5 text-orange-500" />
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Account Information</h2>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 dark:text-slate-300">Email Address:</span>
+              <span className="font-medium text-slate-900 dark:text-white">
+                {user?.email || "Not available"}
+              </span>
+            </div>
+            
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-600">
+              <Button
+                onClick={handlePasswordReset}
+                disabled={passwordResetLoading || !user?.email}
+                variant="outline"
+                className="w-full dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-600"
+              >
+                <Lock className="mr-2 h-4 w-4" />
+                {passwordResetLoading ? "Sending..." : "Reset Password"}
+              </Button>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">
+                A password reset link will be sent to your email address
+              </p>
             </div>
           </div>
         </div>

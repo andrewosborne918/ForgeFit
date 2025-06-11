@@ -18,6 +18,11 @@ This guide will help you set up the complete Stripe subscription system for Forg
 - Subscription limit modal in dashboard
 - Automatic redirect to Stripe checkout
 - Workout count tracking and limits
+- **Profile page subscription management**
+  - View subscription status and workout count
+  - Access Stripe billing portal for subscribers
+  - Subscribe to Premium directly from profile
+  - Next billing date display for active subscriptions
 
 ## 🚀 Setup Instructions
 
@@ -99,6 +104,13 @@ NEXT_PUBLIC_BASE_URL=http://localhost:3000
 3. Frontend shows subscription modal
 4. User clicks "Subscribe Now" → redirected to Stripe checkout
 5. On successful payment, webhook updates Firestore with subscription status
+
+### Profile Page Management:
+- **Subscription Status**: Clear display of Free vs Premium plan
+- **Usage Tracking**: Shows workout count (with limit for free users)
+- **Billing Access**: Direct link to Stripe billing portal for subscribers
+- **Upgrade Option**: Easy subscription signup for free users
+- **Billing Dates**: Next billing cycle information for active subscribers
 
 ### Firestore User Document Structure:
 ```javascript

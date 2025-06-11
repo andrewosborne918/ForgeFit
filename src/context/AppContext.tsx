@@ -12,6 +12,8 @@ interface UserProfile {
   fitnessLevel?: string;
   goals?: string[];
   equipment?: string[];
+  plan?: 'free' | 'premium';
+  workoutsGenerated?: number;
   [key: string]: unknown;
 }
 

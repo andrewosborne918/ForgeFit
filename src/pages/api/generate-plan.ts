@@ -39,12 +39,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       if (userDoc.exists) {
         const userData = userDoc.data();
-        const isSubscribed = userData?.isSubscribed || false;
-        const workoutCount = userData?.workoutCount || 0;
+        const profile = userData?.profile || {};
+        const plan = profile?.plan || 'free';
+        const workoutsGenerated = profile?.workoutsGenerated || 0;
         
-        // If user is not subscribed and has generated 3 or more workouts, deny access
-        if (!isSubscribed && workoutCount >= 3) {
-          return res.status(403).json({ error: "limit-exceeded" });
+        // If user is on free plan and has generated 3 or more workouts, deny access
+        if (plan !== 'premium' && workoutsGenerated >= 3) {
+          return res.status(403).json({ error: "Free limit reached. Upgrade to generate more." });
         }
       }
     }
@@ -120,21 +121,25 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
     // Increment workout count for the user
     try {
       if (adminDB) {
-        console.log(`Attempting to increment workout count for user: ${userId}`);
+        console.log(`Attempting to increment workoutsGenerated for user: ${userId}`);
         const userDoc = await adminDB.collection('users').doc(userId).get();
-        const currentCount = userDoc.data()?.workoutCount || 0;
+        const currentProfile = userDoc.data()?.profile || {};
+        const currentCount = currentProfile?.workoutsGenerated || 0;
         
         await adminDB.collection('users').doc(userId).set({
-          workoutCount: currentCount + 1,
-          lastWorkoutGenerated: new Date(),
+          profile: {
+            ...currentProfile,
+            workoutsGenerated: currentCount + 1,
+            lastWorkoutGenerated: new Date(),
+          }
         }, { merge: true });
         
-        console.log(`✅ Successfully updated workout count for user ${userId}: ${currentCount} -> ${currentCount + 1}`);
+        console.log(`✅ Successfully updated workoutsGenerated for user ${userId}: ${currentCount} -> ${currentCount + 1}`);
         
         // Verify the update worked
         const verifyDoc = await adminDB.collection('users').doc(userId).get();
-        const newCount = verifyDoc.data()?.workoutCount || 0;
-        console.log(`✅ Verified new workout count: ${newCount}`);
+        const newCount = verifyDoc.data()?.profile?.workoutsGenerated || 0;
+        console.log(`✅ Verified new workoutsGenerated count: ${newCount}`);
       } else {
         console.warn("❌ Firebase Admin DB not available, workout count will not be updated");
       }

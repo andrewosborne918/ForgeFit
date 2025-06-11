@@ -35,13 +35,13 @@ export default function ProfilePage() {
 
   // Subscription state
   const [subscriptionData, setSubscriptionData] = useState<{
-    isSubscribed: boolean
-    workoutCount: number
+    plan: 'free' | 'premium'
+    workoutsGenerated: number
     currentPeriodEnd?: Date
     subscriptionId?: string
   }>({
-    isSubscribed: false,
-    workoutCount: 0
+    plan: 'free',
+    workoutsGenerated: 0
   })
   const [billingLoading, setBillingLoading] = useState(false)
 
@@ -59,9 +59,10 @@ export default function ProfilePage() {
       console.log(`📊 User data from Firestore:`, userData)
       
       if (userData) {
+        const profile = userData.profile || {};
         const newSubscriptionData = {
-          isSubscribed: userData.isSubscribed || false,
-          workoutCount: userData.workoutCount || 0,
+          plan: profile.plan || 'free',
+          workoutsGenerated: profile.workoutsGenerated || 0,
           currentPeriodEnd: userData.currentPeriodEnd?.toDate(),
           subscriptionId: userData.subscriptionId
         }
@@ -98,9 +99,10 @@ export default function ProfilePage() {
 
         // Load subscription data
         if (userData) {
+          const profile = userData.profile || {};
           setSubscriptionData({
-            isSubscribed: userData.isSubscribed || false,
-            workoutCount: userData.workoutCount || 0,
+            plan: profile.plan || 'free',
+            workoutsGenerated: profile.workoutsGenerated || 0,
             currentPeriodEnd: userData.currentPeriodEnd?.toDate(),
             subscriptionId: userData.subscriptionId
           })
@@ -247,23 +249,22 @@ export default function ProfilePage() {
           
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-slate-700 dark:text-slate-300">Plan:</span>
-              <Badge 
-                variant={subscriptionData.isSubscribed ? "default" : "secondary"}
-                className={subscriptionData.isSubscribed ? "bg-orange-500 hover:bg-orange-600" : ""}
+              <span className="text-slate-700 dark:text-slate-300">Plan:</span>              <Badge
+                variant={subscriptionData.plan === 'premium' ? "default" : "secondary"}
+                className={subscriptionData.plan === 'premium' ? "bg-orange-500 hover:bg-orange-600" : ""}
               >
-                {subscriptionData.isSubscribed ? "Premium" : "Free"}
+                {subscriptionData.plan === 'premium' ? "Premium" : "Free"}
               </Badge>
             </div>
             
             <div className="flex items-center justify-between">
               <span className="text-slate-700 dark:text-slate-300">Workouts Generated:</span>
               <span className="font-medium text-slate-900 dark:text-white">
-                {subscriptionData.workoutCount} {!subscriptionData.isSubscribed && "/ 3"}
+                {subscriptionData.workoutsGenerated} {subscriptionData.plan !== 'premium' && "/ 3"}
               </span>
             </div>
 
-            {subscriptionData.isSubscribed && subscriptionData.currentPeriodEnd && (
+            {subscriptionData.plan === 'premium' && subscriptionData.currentPeriodEnd && (
               <div className="flex items-center justify-between">
                 <span className="text-slate-700 dark:text-slate-300">Next Billing:</span>
                 <div className="flex items-center gap-2">
@@ -276,7 +277,7 @@ export default function ProfilePage() {
             )}
 
             <div className="pt-4 border-t border-slate-200 dark:border-slate-600">
-              {subscriptionData.isSubscribed ? (
+              {subscriptionData.plan === 'premium' ? (
                 <Button
                   onClick={handleManageBilling}
                   disabled={billingLoading}

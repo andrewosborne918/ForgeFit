@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
         // Get the subscription details
         const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
         
-        // Update user in Firestore
+        // Update user in Firestore with new profile structure
         await adminDB.collection('users').doc(firebaseUID).update({
-          isSubscribed: true,
+          'profile.plan': 'premium',
           subscriptionId: subscription.id,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         if (!usersQuery.empty) {
           const userDoc = usersQuery.docs[0];
           await userDoc.ref.update({
-            isSubscribed: subscription.status === 'active',
+            'profile.plan': subscription.status === 'active' ? 'premium' : 'free',
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
             updatedAt: new Date(),
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
         if (!usersQuery.empty) {
           const userDoc = usersQuery.docs[0];
           await userDoc.ref.update({
-            isSubscribed: false,
+            'profile.plan': 'free',
             updatedAt: new Date(),
           });
 

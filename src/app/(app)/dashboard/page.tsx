@@ -444,7 +444,9 @@ interface UserProfile {
           image: json.imageUrl,
           plan: {
             title: json.title,
-            goal: userProfile?.goals || "General Fitness", // Use user's actual goal from profile
+            goal: Array.isArray(userProfile?.goals) 
+              ? userProfile.goals.join(", ") 
+              : (userProfile?.goals || "General Fitness"), // Convert array to string or use fallback
             duration: json.duration,
             notes: json.notes || "", // Provide fallback for undefined notes
             workout: json.workout
@@ -459,7 +461,9 @@ interface UserProfile {
             ...wrappedPlan,
             plan: {
               ...wrappedPlan.plan,
-              goal: userProfile?.goals || "General Fitness", // Use user's actual goal
+              goal: Array.isArray(userProfile?.goals) 
+                ? userProfile.goals.join(", ") 
+                : (userProfile?.goals || "General Fitness"), // Convert array to string or use fallback
               notes: wrappedPlan.plan.notes || ""
             }
           };
@@ -471,7 +475,9 @@ interface UserProfile {
               ...wrappedPlan,
               plan: {
                 ...wrappedPlan.plan,
-                goal: userProfile?.goals || "General Fitness", // Use user's actual goal
+                goal: Array.isArray(userProfile?.goals) 
+                  ? userProfile.goals.join(", ") 
+                  : (userProfile?.goals || "General Fitness"), // Convert array to string or use fallback
                 notes: wrappedPlan.plan.notes || ""
               },
               createdAt: new Date().toISOString(),
@@ -511,7 +517,9 @@ interface UserProfile {
                 ...wrappedPlan,
                 plan: {
                   ...wrappedPlan.plan,
-                  goal: userProfile?.goals || "General Fitness", // Use user's actual goal
+                  goal: Array.isArray(userProfile?.goals) 
+                    ? userProfile.goals.join(", ") 
+                    : (userProfile?.goals || "General Fitness"),
                   notes: wrappedPlan.plan.notes || ""
                 }
               }
@@ -525,7 +533,9 @@ interface UserProfile {
                 ...wrappedPlan,
                 plan: {
                   ...wrappedPlan.plan,
-                  goal: userProfile?.goals || "General Fitness", // Use user's actual goal
+                  goal: Array.isArray(userProfile?.goals) 
+                    ? userProfile.goals.join(", ") 
+                    : (userProfile?.goals || "General Fitness"),
                   notes: wrappedPlan.plan.notes || ""
                 }
               }

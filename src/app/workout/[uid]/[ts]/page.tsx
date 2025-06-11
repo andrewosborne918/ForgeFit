@@ -342,13 +342,22 @@ export default function WorkoutDetailPage() {
     // OG Tag values
     const ogTitle = plan.plan?.title || "Workout Plan";
     const ogDescription = "Join me on ForgeFit and try this custom AI-generated workout!";
-    const ogImage = plan.image ? `https://forgefit.pro${plan.image.startsWith('/') ? '' : '/'}${plan.image}` : "https://forgefit.pro/default.jpg"; // Fallback public image
     const pageOgUrl = `https://forgefit.pro/workout/${uid}/${ts}`;
+    
+    // Generate social media image URL
+    const workoutImagePath = plan.image ? encodeURIComponent(plan.image) : '';
+    const workoutTitleEncoded = encodeURIComponent(workoutTitle);
+    const workoutDuration = plan.plan?.duration ? encodeURIComponent(plan.plan.duration.toString()) : '';
+    const socialImageUrl = `https://forgefit.pro/api/generate-social-image?workoutImage=${workoutImagePath}&title=${workoutTitleEncoded}&duration=${workoutDuration}`;
+    
+    // Use generated social image or fallback
+    const ogImage = plan.image ? socialImageUrl : "https://forgefit.pro/default.jpg";
 
     // Share message definitions
     const emailSubject = `Check out this ForgeFit Workout: ${workoutTitle}`;
     const emailBody = `I thought you might like this workout I found on ForgeFit! Perfect for ${plan.plan?.goal || 'achieving your fitness goals'}. You can view it here: ${pageOgUrl}`;
-    const xShareMessage = `Just finished a great workout: "${workoutTitle}" on ForgeFit! ${ogDescription} Check it out: ${pageOgUrl}`;
+    const xShareMessage = `Just finished a great workout: "${workoutTitle}" on ForgeFit! ${ogDescription}`;
+    const facebookShareText = `Check out this amazing ForgeFit workout: "${workoutTitle}"! Perfect for ${plan.plan?.goal || 'achieving your fitness goals'}.`;
 
 
     const handlePrint = () => {
@@ -546,8 +555,9 @@ export default function WorkoutDetailPage() {
                   size="icon" 
                   onClick={() => {
                     const url = encodeURIComponent(pageOgUrl);
+                    const text = encodeURIComponent(facebookShareText);
                     window.open(
-                      `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+                      `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`,
                       "_blank",
                       "width=600,height=400"
                     );

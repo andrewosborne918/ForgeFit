@@ -463,7 +463,7 @@ interface UserProfile {
         const wrappedPlan = { 
           id: json.id,
           title: json.title,
-          image: json.imageUrl,
+          ...(json.imageUrl && { image: json.imageUrl }), // Only include image if it exists
           plan: {
             title: json.title,
             goal: goalString,
@@ -478,7 +478,9 @@ interface UserProfile {
         if (user) {
           // Ensure no undefined values before saving to Firebase
           const cleanWrappedPlan = {
-            ...wrappedPlan,
+            id: wrappedPlan.id,
+            title: wrappedPlan.title,
+            ...(wrappedPlan.image && { image: wrappedPlan.image }), // Only include image if it exists
             plan: {
               ...wrappedPlan.plan,
               goal: goalString, // Use the same converted string
@@ -490,7 +492,9 @@ interface UserProfile {
           if (json.id) {
             const logRef = doc(db, `users/${user.uid}/logs/${json.id}`);
             await setDoc(logRef, {
-              ...wrappedPlan,
+              id: wrappedPlan.id,
+              title: wrappedPlan.title,
+              ...(wrappedPlan.image && { image: wrappedPlan.image }), // Only include image if it exists
               plan: {
                 ...wrappedPlan.plan,
                 goal: goalString, // Use the same converted string
@@ -504,7 +508,7 @@ interface UserProfile {
             const newCompletedPlan: CompletedPlan = {
               id: json.id,
               plan: wrappedPlan,
-              image: json.imageUrl,
+              ...(json.imageUrl && { image: json.imageUrl }), // Only include image if it exists
               timestamp: json.id.startsWith('generated-') ? Number(json.id.replace('generated-', '')) : Date.now(),
               createdAt: new Date().toISOString(),
             };
@@ -522,7 +526,7 @@ interface UserProfile {
               planId: json.id || `generated-${Date.now()}`,
               title: json.title,
               duration: formatDuration(numericDuration),
-              imageUrl: json.imageUrl,
+              ...(json.imageUrl && { imageUrl: json.imageUrl }), // Only include imageUrl if it exists
             };
             const updatedSchedule = [...weeklySchedule];
             // --- Save the full plan object as 'workout' ---

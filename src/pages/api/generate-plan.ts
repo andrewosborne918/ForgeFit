@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextApiRequest, NextApiResponse } from 'next';
-import { adminDB } from '../../lib/firebase-admin';
+import { getAdminDB } from '../../lib/firebase-admin';
 
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
@@ -32,6 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Check user subscription status and workout count with proper debugging
   try {
+    const adminDB = getAdminDB();
     if (!adminDB) {
       console.warn("Firebase Admin not configured, skipping subscription check");
     } else {
@@ -131,6 +132,7 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
     
     // Increment workout count for the user
     try {
+      const adminDB = getAdminDB();
       if (adminDB) {
         console.log(`🔄 Attempting to increment workoutsGenerated for user: ${userId}`);
         const userDoc = await adminDB.collection('users').doc(userId).get();

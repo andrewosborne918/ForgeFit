@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useAppContext } from '@/context/AppContext'; // Changed useAuth to useAppContext
 import { useRouter, useSearchParams } from 'next/navigation';
 import { app, isFirebaseConfigured } from '@/lib/firebase'; // Import app and isFirebaseConfigured
@@ -91,7 +91,7 @@ function getNextWorkoutImage(gender: string): string {
   return `/images/${folder}/${filename}`
 }
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const { user, userProfile, setUserProfile, loading: authLoading } = useAppContext();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1738,4 +1738,25 @@ interface UserProfile {
       <BottomNavigationBar onQuickWorkout={handleQuickWorkout} />
     </div>
   );
-};
+}
+
+// Loading component for Suspense fallback
+function DashboardLoading() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="text-center">
+        <Loader2 className="animate-spin h-8 w-8 mx-auto mb-4 text-orange-500" />
+        <p className="text-muted-foreground">Loading dashboard...</p>
+      </div>
+    </div>
+  );
+}
+
+// Main export wrapped in Suspense boundary
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardPageContent />
+    </Suspense>
+  );
+}

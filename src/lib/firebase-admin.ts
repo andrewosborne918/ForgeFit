@@ -2,24 +2,35 @@
 import { initializeApp, getApps, cert, ServiceAccount } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Firebase Admin SDK configuration
-const serviceAccount: ServiceAccount = {
-  projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-};
+let isInitialized = false;
 
-// Initialize Firebase Admin SDK only once
-if (getApps().length === 0) {
+// Initialize Firebase Admin SDK only when needed and at runtime
+function initializeFirebaseAdmin() {
+  // Only run at runtime, not during build
+  if (typeof window !== 'undefined') return; // Client-side guard
+  if (isInitialized) return; // Already initialized guard
+  
   try {
-    // Only initialize if we have valid configuration
-    if (serviceAccount.projectId && serviceAccount.privateKey && serviceAccount.clientEmail) {
+    // Only initialize if we have valid configuration AND we're in a runtime environment
+    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+
+    if (projectId && privateKey && clientEmail && getApps().length === 0) {
+      const serviceAccount: ServiceAccount = {
+        projectId,
+        privateKey,
+        clientEmail,
+      };
+
       initializeApp({
         credential: cert(serviceAccount),
         projectId: serviceAccount.projectId,
       });
+      
+      isInitialized = true;
       console.log('Firebase Admin SDK initialized successfully');
-    } else {
+    } else if (!projectId || !privateKey || !clientEmail) {
       console.warn('Firebase Admin SDK configuration missing, skipping initialization');
     }
   } catch (error) {
@@ -27,12 +38,22 @@ if (getApps().length === 0) {
   }
 }
 
-// Export the initialized admin firestore with error handling
-export const adminDB = (() => {
+// Export the admin firestore with runtime initialization
+export const getAdminDB = () => {
+  // Only run at runtime, not during build
+  if (typeof window !== 'undefined') return null; // Client-side guard
+  
   try {
-    return getFirestore();
-  } catch {
-    console.warn('Firebase Admin not initialized, returning null for adminDB');
+    // Initialize if needed
+    initializeFirebaseAdmin();
+    
+    // Return firestore instance if available
+    return getApps().length > 0 ? getFirestore() : null;
+  } catch (error) {
+    console.warn('Firebase Admin not initialized, returning null for adminDB:', error);
     return null;
   }
-})();
+};
+
+// Legacy export for backward compatibility (but this will be null at build time)
+export const adminDB = null;

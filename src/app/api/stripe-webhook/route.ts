@@ -1,7 +1,7 @@
 // src/app/api/stripe-webhook/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { adminDB } from '@/lib/firebase-admin';
+import { getAdminDB } from '@/lib/firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-04-30.basil',
@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const adminDB = getAdminDB();
   if (!adminDB) {
     return NextResponse.json(
       { error: 'Firebase Admin not configured' },

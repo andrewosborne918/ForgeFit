@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 // import { Checkbox } from "@/components/ui/checkbox"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"; 
 import Link from 'next/link'; 
-import { Loader2, Edit3, PlusCircle, Coffee, Repeat, Zap, /* CalendarPlus, */ Trash2, ImageIcon, XCircle, Eye } from "lucide-react"; // Added Eye icon
+import { Loader2, Edit3, PlusCircle, Coffee, Repeat, Zap, /* CalendarPlus, */ Trash2, ImageIcon, XCircle, Eye, RefreshCw } from "lucide-react"; // Added RefreshCw icon
 // import { Slider } from "@/components/ui/slider"
 // import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
@@ -142,7 +142,7 @@ function DashboardPageContent() {
   const [isClearAllDialogOpen, setIsClearAllDialogOpen] = useState(false); // State for Clear All confirmation dialog
 
   // Mobile view state for bottom navigation
-  const [currentView, setCurrentView] = useState<'dashboard' | 'calendar' | 'history'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'calendar' | 'history' | 'workout'>('workout');
 
   // Check URL parameters for navigation state
   useEffect(() => {
@@ -155,8 +155,10 @@ function DashboardPageContent() {
       setCurrentView('calendar');
     } else if (view === 'history') {
       setCurrentView('history');
+    } else if (view === 'workout') {
+      setCurrentView('workout');
     } else {
-      setCurrentView('dashboard');
+      setCurrentView('workout');
     }
     
     if (shouldGenerate === 'true') {
@@ -1018,12 +1020,100 @@ interface UserProfile {
     </div>
   );
 
+  // Mobile Workout View Component
+  const MobileWorkoutView = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-semibold text-slate-700 dark:text-slate-200">Current Workout</h2>
+      </div>
+      
+      {currentWorkout ? (
+        <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg overflow-hidden">
+          {/* Header with refresh button */}
+          <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">Ready to Start</h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsModalOpen(true)}
+              className="text-slate-500 hover:text-orange-500 dark:text-slate-400 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+              title="Generate new workout"
+            >
+              <RefreshCw className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          {/* Workout card content */}
+          <div className="p-6">
+            {/* Image */}
+            <div className="w-full aspect-video relative mb-6 rounded-lg overflow-hidden shadow-md">
+              {(currentWorkout.image || currentWorkout.imageUrl) ? (
+                <Image
+                  src={currentWorkout.image || currentWorkout.imageUrl!}
+                  alt={currentWorkout.title || "Current workout"}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
+                  <ImageIcon className="h-16 w-16 text-slate-400 dark:text-slate-500" />
+                </div>
+              )}
+            </div>
+            
+            {/* Title and duration */}
+            <div className="text-center mb-6 space-y-2">
+              <h4 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                {currentWorkout.plan?.title || currentWorkout.title || "Current Workout"}
+              </h4>
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-700">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  Duration: {currentWorkout.plan?.duration || currentWorkout.duration || "Not specified"}
+                </p>
+              </div>
+            </div>
+            
+            {/* Start button */}
+            <Button
+              onClick={() => {
+                if (currentWorkout.id && user) {
+                  router.push(`/workout/${user.uid}/${currentWorkout.id}`);
+                }
+              }}
+              disabled={!currentWorkout.id}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 text-lg py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <Zap className="mr-2 h-6 w-6" /> Start Workout
+            </Button>
+          </div>
+        </div>
+      ) : (
+        /* No workout state */
+        <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg p-8 text-center">
+          <div className="w-24 h-24 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 rounded-lg flex items-center justify-center mx-auto mb-6">
+            <ImageIcon className="h-12 w-12 text-slate-400 dark:text-slate-500" />
+          </div>
+          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-3">No Active Workout</h3>
+          <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">Generate your first AI-powered workout to get started on your fitness journey!</p>
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 text-lg py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <Zap className="mr-2 h-6 w-6" /> Generate Workout
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="container mx-auto px-4 py-8 pb-safe-24 md:pb-8">
       {/* Mobile View Conditional Rendering */}
       <div className="md:hidden">
         {currentView === 'calendar' && <MobileCalendarView />}
         {currentView === 'history' && <MobileHistoryView />}
+        {currentView === 'workout' && <MobileWorkoutView />}
         {currentView === 'dashboard' && (
           <>
             {/* Current Workout Card for Mobile */}

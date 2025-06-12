@@ -15,20 +15,20 @@ import { useState } from "react"
 
 interface BottomNavigationBarProps {
   onQuickWorkout?: () => void;
-  currentView?: 'dashboard' | 'calendar' | 'history';
-  onViewChange?: (view: 'dashboard' | 'calendar' | 'history') => void;
+  currentView?: 'dashboard' | 'calendar' | 'history' | 'workout';
+  onViewChange?: (view: 'dashboard' | 'calendar' | 'history' | 'workout') => void;
 }
 
-export function BottomNavigationBar({ onQuickWorkout, currentView = 'dashboard', onViewChange }: BottomNavigationBarProps) {
+export function BottomNavigationBar({ onQuickWorkout, currentView = 'workout', onViewChange }: BottomNavigationBarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, userProfile } = useAppContext()
   const [isGenerating, setIsGenerating] = useState(false)
 
   const handleMostRecentWorkout = () => {
-    // If we're already on dashboard, switch to dashboard view
+    // If we're already on dashboard, switch to workout view
     if (pathname === '/dashboard') {
-      onViewChange?.('dashboard');
+      onViewChange?.('workout');
       return;
     }
     
@@ -36,8 +36,8 @@ export function BottomNavigationBar({ onQuickWorkout, currentView = 'dashboard',
     if (userProfile?.activePlan && typeof userProfile.activePlan === 'object' && 'id' in userProfile.activePlan && userProfile.activePlan.id && user) {
       router.push(`/workout/${user.uid}/${userProfile.activePlan.id}`)
     } else {
-      // If no active workout, navigate to dashboard
-      router.push('/dashboard')
+      // If no active workout, navigate to dashboard with workout view
+      router.push('/dashboard?view=workout')
     }
   }
 
@@ -88,7 +88,7 @@ export function BottomNavigationBar({ onQuickWorkout, currentView = 'dashboard',
       icon: Dumbbell, 
       label: "Workout", 
       action: handleMostRecentWorkout,
-      isActive: pathname === '/dashboard' ? currentView === 'dashboard' : (pathname?.startsWith("/workout") ?? false)
+      isActive: pathname === '/dashboard' ? currentView === 'workout' : (pathname?.startsWith("/workout") ?? false)
     },
     { 
       key: "calendar", 

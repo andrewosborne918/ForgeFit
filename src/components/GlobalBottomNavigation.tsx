@@ -11,7 +11,7 @@ interface GlobalBottomNavigationProps {
 export function GlobalBottomNavigation({ children }: GlobalBottomNavigationProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const [currentView, setCurrentView] = useState<'dashboard' | 'calendar' | 'history'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'calendar' | 'history' | 'workout'>('workout')
 
   // Determine if we should show the bottom navigation
   const shouldShowBottomNav = () => {
@@ -30,20 +30,20 @@ export function GlobalBottomNavigation({ children }: GlobalBottomNavigationProps
     if (pathname === '/dashboard') {
       const urlParams = new URLSearchParams(window.location.search)
       const view = urlParams.get('view')
-      if (view === 'calendar' || view === 'history') {
+      if (view === 'calendar' || view === 'history' || view === 'workout') {
         setCurrentView(view)
       } else {
-        setCurrentView('dashboard')
+        setCurrentView('workout')
       }
     }
   }, [pathname])
 
-  const handleViewChange = (view: 'dashboard' | 'calendar' | 'history') => {
+  const handleViewChange = (view: 'dashboard' | 'calendar' | 'history' | 'workout') => {
     setCurrentView(view)
     // If we're on dashboard, update the URL to reflect the view change
     if (pathname === '/dashboard') {
       const url = new URL(window.location.href)
-      if (view === 'dashboard') {
+      if (view === 'workout') {
         url.searchParams.delete('view')
       } else {
         url.searchParams.set('view', view)

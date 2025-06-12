@@ -15,6 +15,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore"
 import { app, isFirebaseConfigured } from "@/lib/firebase"
+import { getAuthErrorMessage, FirebaseAuthError } from "@/lib/authErrorHandler"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -94,8 +95,8 @@ const handleSignUp = async () => {
 
     router.push("/profile")
   } catch (err: unknown) {
-    const error = err as { message?: string }
-    setError(error.message || 'An error occurred')
+    const error = err as FirebaseAuthError
+    setError(getAuthErrorMessage(error))
   } finally {
     setLoading(false)
   }
@@ -126,23 +127,8 @@ const handleGoogle = async () => {
     
     router.push("/profile")
   } catch (err: unknown) {
-    const error = err as { code?: string; message?: string }
-    
-    if (error.code === 'auth/popup-closed-by-user') {
-      setError("Sign-in was cancelled. Please try again.")
-    } else if (error.code === 'auth/popup-blocked') {
-      setError("Popup was blocked by your browser. Please allow popups for this site and try again.")
-    } else if (error.code === 'auth/cancelled-popup-request') {
-      setError("Another sign-in popup is already open. Please close it and try again.")
-    } else if (error.code === 'auth/network-request-failed') {
-      setError("Network error. Please check your internet connection and try again.")
-    } else if (error.code === 'auth/unauthorized-domain') {
-      setError("This domain is not authorized for Google sign-in. Please contact support.")
-    } else if (error.code === 'auth/operation-not-allowed') {
-      setError("Google sign-in is not enabled. Please contact support.")
-    } else {
-      setError(`Sign-in failed: ${error.message || "Unknown error"}`)
-    }
+    const error = err as FirebaseAuthError
+    setError(getAuthErrorMessage(error))
   } finally {
     setLoading(false)
   }

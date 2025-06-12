@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth"
 import { app, isFirebaseConfigured } from "@/lib/firebase"
+import { getAuthErrorMessage, FirebaseAuthError } from "@/lib/authErrorHandler"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -65,7 +66,8 @@ export default function SignInPage() {
       await signInWithEmailAndPassword(auth, email, password)
       router.push("/dashboard")
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      const error = err as FirebaseAuthError
+      setError(getAuthErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -83,16 +85,8 @@ export default function SignInPage() {
       router.push("/dashboard")
     } catch (err: unknown) {
       console.error("❌ Google signin error:", err)
-      const error = err as { code?: string; message?: string }
-      if (error.code === 'auth/popup-closed-by-user') {
-        setError("Sign-in was cancelled")
-      } else if (error.code === 'auth/popup-blocked') {
-        setError("Popup was blocked by browser. Please allow popups and try again.")
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        setError("Another sign-in popup is already open")
-      } else {
-        setError((error as Error).message || "Failed to sign in with Google")
-      }
+      const error = err as FirebaseAuthError
+      setError(getAuthErrorMessage(error))
     } finally {
       setLoading(false)
     }

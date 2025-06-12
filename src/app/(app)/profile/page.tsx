@@ -15,6 +15,7 @@ import {
   setDoc,
 } from "firebase/firestore"
 import { app, isFirebaseConfigured } from "@/lib/firebase"
+import { getAuthErrorMessage, FirebaseAuthError } from "@/lib/authErrorHandler"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -246,7 +247,8 @@ export default function ProfilePage() {
       toast.success(`Password reset email sent to ${user.email}`)
     } catch (error) {
       console.error('Error sending password reset email:', error)
-      toast.error('Failed to send password reset email. Please try again.')
+      const authError = error as FirebaseAuthError
+      toast.error(getAuthErrorMessage(authError))
     } finally {
       setPasswordResetLoading(false)
     }

@@ -201,8 +201,8 @@ export default function ProfilePage() {
         window.location.href = url
       }
     } catch (error) {
-      console.error('Error accessing billing portal:', error)
-      toast.error('Unable to access billing portal. Please try again.')
+      console.error('Error creating billing session:', error)
+      toast.error('Failed to open billing portal')
     } finally {
       setBillingLoading(false)
     }
@@ -210,7 +210,7 @@ export default function ProfilePage() {
 
   const handleSubscribe = async () => {
     if (!user) return
-    
+
     try {
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -220,14 +220,18 @@ export default function ProfilePage() {
           email: user.email
         })
       })
-      
+
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session')
+      }
+
       const { url } = await response.json()
       if (url) {
         window.location.href = url
       }
     } catch (error) {
       console.error('Error creating checkout session:', error)
-      toast.error('Unable to start subscription. Please try again.')
+      toast.error('Failed to start subscription process')
     }
   }
 

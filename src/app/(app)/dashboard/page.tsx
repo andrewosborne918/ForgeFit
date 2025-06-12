@@ -9,9 +9,9 @@ import { getFirestore, setDoc, doc, collection, query, orderBy, getDocs, deleteD
 import Image from "next/image" 
 import { Button } from "@/components/ui/button" 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog" 
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-// import { Input } from "@/components/ui/input"
-// import { Label } from "@/components/ui/label"
 // import { Checkbox } from "@/components/ui/checkbox"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"; 
 import Link from 'next/link'; 
@@ -131,6 +131,8 @@ function DashboardPageContent() {
 
   // Subscription modal state
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoCodeError, setPromoCodeError] = useState("");
 
   // const [isAssignToDayModalOpen, setIsAssignToDayModalOpen] = useState(false);
   // const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutAssignmentDetails | null>(null);
@@ -1803,6 +1805,27 @@ interface UserProfile {
                 <li>✓ Priority support</li>
               </ul>
             </div>
+            
+            {/* Promo Code Section */}
+            <div className="space-y-2">
+              <Label htmlFor="promoCode" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Promo Code (Optional)
+              </Label>
+              <Input
+                id="promoCode"
+                type="text"
+                placeholder="Enter promo code"
+                value={promoCode}
+                onChange={(e) => {
+                  setPromoCode(e.target.value.toUpperCase());
+                  setPromoCodeError(""); // Clear error when user types
+                }}
+                className="bg-white/50 dark:bg-slate-700/50 border-slate-300 dark:border-slate-600"
+              />
+              {promoCodeError && (
+                <p className="text-sm text-red-500 dark:text-red-400">{promoCodeError}</p>
+              )}
+            </div>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <DialogClose asChild>
@@ -1814,15 +1837,35 @@ interface UserProfile {
               className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
               onClick={async () => {
                 if (!user) return;
+                
+                // Clear any previous error
+                setPromoCodeError("");
+                
                 try {
+                  const requestBody: any = {
+                    userId: user.uid,
+                    email: user.email
+                  };
+                  
+                  // Include promo code if provided
+                  if (promoCode.trim()) {
+                    requestBody.promoCode = promoCode.trim();
+                  }
+                  
                   const response = await fetch('/api/create-checkout-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      userId: user.uid,
-                      email: user.email
-                    })
+                    body: JSON.stringify(requestBody)
                   });
+                  
+                  if (!response.ok) {
+                    const errorData = await response.json();
+                    if (errorData.error) {
+                      setPromoCodeError(errorData.error);
+                      return;
+                    }
+                    throw new Error('Failed to create checkout session');
+                  }
                   
                   const { url } = await response.json();
                   if (url) {
@@ -1830,6 +1873,7 @@ interface UserProfile {
                   }
                 } catch (error) {
                   console.error('Error creating checkout session:', error);
+                  setPromoCodeError('Failed to start subscription. Please try again.');
                 }
               }}
             >

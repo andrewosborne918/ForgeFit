@@ -47,6 +47,10 @@ export default function ProfilePage() {
   })
   const [billingLoading, setBillingLoading] = useState(false)
   const [passwordResetLoading, setPasswordResetLoading] = useState(false)
+  
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("")
+  const [promoCodeError, setPromoCodeError] = useState("")
 
   // Function to refresh subscription data
   const refreshSubscriptionData = async (userId: string) => {
@@ -211,17 +215,32 @@ export default function ProfilePage() {
   const handleSubscribe = async () => {
     if (!user) return
 
+    // Clear any previous error
+    setPromoCodeError("")
+
     try {
+      const requestBody: any = {
+        userId: user.uid,
+        email: user.email
+      }
+      
+      // Include promo code if provided
+      if (promoCode.trim()) {
+        requestBody.promoCode = promoCode.trim()
+      }
+
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          email: user.email
-        })
+        body: JSON.stringify(requestBody)
       })
 
       if (!response.ok) {
+        const errorData = await response.json()
+        if (errorData.error) {
+          setPromoCodeError(errorData.error)
+          return
+        }
         throw new Error('Failed to create checkout session')
       }
 
@@ -231,7 +250,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error('Error creating checkout session:', error)
-      toast.error('Failed to start subscription process')
+      setPromoCodeError('Failed to start subscription process')
     }
   }
 
@@ -326,6 +345,28 @@ export default function ProfilePage() {
                     </p>
                     <p className="text-2xl font-bold text-orange-500">$9.99/month</p>
                   </div>
+                  
+                  {/* Promo Code Section */}
+                  <div className="space-y-2">
+                    <Label htmlFor="promoCode" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Promo Code (Optional)
+                    </Label>
+                    <Input
+                      id="promoCode"
+                      type="text"
+                      placeholder="Enter promo code"
+                      value={promoCode}
+                      onChange={(e) => {
+                        setPromoCode(e.target.value.toUpperCase())
+                        setPromoCodeError("") // Clear error when user types
+                      }}
+                      className="bg-white/50 dark:bg-slate-700/50 border-slate-300 dark:border-slate-600"
+                    />
+                    {promoCodeError && (
+                      <p className="text-sm text-red-500 dark:text-red-400">{promoCodeError}</p>
+                    )}
+                  </div>
+                  
                   <Button
                     onClick={handleSubscribe}
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white"

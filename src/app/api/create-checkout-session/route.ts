@@ -8,7 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, email } = await request.json();
+    const { userId, email, promoCode } = await request.json();
 
     if (!userId || !email) {
       return NextResponse.json(
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
       line_items: [
         {
@@ -39,7 +39,54 @@ export async function POST(request: NextRequest) {
       metadata: {
         firebaseUID: userId,
       },
-    });
+      allow_promotion_codes: true, // Always allow promotion codes
+    };
+
+    // If a specific promo code is provided, validate and apply it
+    if (promoCode && promoCode.trim()) {
+      try {
+        // First, try to find the promotion code
+        const promotionCodes = await stripe.promotionCodes.list({
+          code: promoCode.trim(),
+          active: true,
+          limit: 1,
+        });
+
+        if (promotionCodes.data.length > 0) {
+          const promotionCodeObj = promotionCodes.data[0];
+          
+          // Check if the coupon is valid for subscriptions
+          const coupon = await stripe.coupons.retrieve(promotionCodeObj.coupon.id);
+          
+          if (coupon.applies_to?.products || !coupon.applies_to) {
+            // Apply the specific promotion code
+            sessionConfig.discounts = [
+              {
+                promotion_code: promotionCodeObj.id,
+              },
+            ];
+          } else {
+            return NextResponse.json(
+              { error: 'This promo code is not valid for subscriptions' },
+              { status: 400 }
+            );
+          }
+        } else {
+          return NextResponse.json(
+            { error: 'Invalid or expired promo code' },
+            { status: 400 }
+          );
+        }
+      } catch (promoError) {
+        console.error('Error validating promo code:', promoError);
+        return NextResponse.json(
+          { error: 'Error validating promo code' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

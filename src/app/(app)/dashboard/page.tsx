@@ -1842,7 +1842,11 @@ interface UserProfile {
                 setPromoCodeError("");
                 
                 try {
-                  const requestBody: any = {
+                  const requestBody: {
+                    userId: string;
+                    email: string | null;
+                    promoCode?: string;
+                  } = {
                     userId: user.uid,
                     email: user.email
                   };

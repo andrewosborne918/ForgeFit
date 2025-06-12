@@ -15,15 +15,23 @@ import { useState } from "react"
 
 interface BottomNavigationBarProps {
   onQuickWorkout?: () => void;
+  currentView?: 'dashboard' | 'calendar' | 'history';
+  onViewChange?: (view: 'dashboard' | 'calendar' | 'history') => void;
 }
 
-export function BottomNavigationBar({ onQuickWorkout }: BottomNavigationBarProps) {
+export function BottomNavigationBar({ onQuickWorkout, currentView = 'dashboard', onViewChange }: BottomNavigationBarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, userProfile } = useAppContext()
   const [isGenerating, setIsGenerating] = useState(false)
 
   const handleMostRecentWorkout = () => {
+    // If we're already on dashboard, switch to dashboard view
+    if (pathname === '/dashboard') {
+      onViewChange?.('dashboard');
+      return;
+    }
+    
     // Navigate to the most recent workout
     if (userProfile?.activePlan && typeof userProfile.activePlan === 'object' && 'id' in userProfile.activePlan && userProfile.activePlan.id && user) {
       router.push(`/workout/${user.uid}/${userProfile.activePlan.id}`)
@@ -34,6 +42,11 @@ export function BottomNavigationBar({ onQuickWorkout }: BottomNavigationBarProps
   }
 
   const handleCalendarView = () => {
+    // If we're already on dashboard, switch to calendar view
+    if (pathname === '/dashboard') {
+      onViewChange?.('calendar');
+      return;
+    }
     // Navigate to a mobile calendar view or dashboard with calendar focus
     router.push('/dashboard?view=calendar')
   }
@@ -56,6 +69,11 @@ export function BottomNavigationBar({ onQuickWorkout }: BottomNavigationBarProps
   }
 
   const handleHistory = () => {
+    // If we're already on dashboard, switch to history view
+    if (pathname === '/dashboard') {
+      onViewChange?.('history');
+      return;
+    }
     // Navigate to dashboard with history focus
     router.push('/dashboard?view=history')
   }
@@ -70,14 +88,14 @@ export function BottomNavigationBar({ onQuickWorkout }: BottomNavigationBarProps
       icon: Dumbbell, 
       label: "Workout", 
       action: handleMostRecentWorkout,
-      isActive: (pathname === "/dashboard" || pathname?.startsWith("/workout")) ?? false
+      isActive: pathname === '/dashboard' ? currentView === 'dashboard' : (pathname?.startsWith("/workout") ?? false)
     },
     { 
       key: "calendar", 
       icon: Calendar, 
       label: "Calendar", 
       action: handleCalendarView,
-      isActive: false // We'll handle calendar view state separately
+      isActive: pathname === '/dashboard' ? currentView === 'calendar' : false
     },
     { 
       key: "plus", 
@@ -92,7 +110,7 @@ export function BottomNavigationBar({ onQuickWorkout }: BottomNavigationBarProps
       icon: History, 
       label: "History", 
       action: handleHistory,
-      isActive: false // We'll handle history view state separately
+      isActive: pathname === '/dashboard' ? currentView === 'history' : false
     },
     { 
       key: "profile", 

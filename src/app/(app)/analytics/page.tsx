@@ -373,7 +373,7 @@ export default function AnalyticsPage() {
 
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Your Fitness Analytics</h1>
         <p className="mt-2 text-lg text-muted-foreground dark:text-slate-400">

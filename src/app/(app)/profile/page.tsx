@@ -255,7 +255,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 py-12">
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-12 pb-20 md:pb-12">
       {/* Background Grid */}
       <BackgroundGrid />
       

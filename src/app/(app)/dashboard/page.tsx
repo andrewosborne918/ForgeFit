@@ -16,7 +16,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"; 
 import Link from 'next/link'; 
 import { Loader2, Edit3, PlusCircle, Coffee, Repeat, Zap, /* CalendarPlus, */ Trash2, ImageIcon, XCircle, Eye } from "lucide-react"; // Added Eye icon
-import { BottomNavigationBar } from "@/components/BottomNavigationBar";
 // import { Slider } from "@/components/ui/slider"
 // import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
@@ -168,6 +167,25 @@ function DashboardPageContent() {
       window.history.replaceState({}, '', newUrl.toString());
     }
   }, [searchParams]);
+
+  // Listen for bottom navigation events from GlobalBottomNavigation
+  useEffect(() => {
+    const handleViewChange = (event: CustomEvent) => {
+      setCurrentView(event.detail.view);
+    };
+
+    const handleWorkoutGeneration = () => {
+      setIsModalOpen(true);
+    };
+
+    window.addEventListener('dashboardViewChange', handleViewChange as EventListener);
+    window.addEventListener('triggerWorkoutGeneration', handleWorkoutGeneration);
+
+    return () => {
+      window.removeEventListener('dashboardViewChange', handleViewChange as EventListener);
+      window.removeEventListener('triggerWorkoutGeneration', handleWorkoutGeneration);
+    };
+  }, []);
 
   // All useEffect hooks must be called before any early returns
   // 1. On mount, load weeklySchedule from Firestore subcollection (users/{uid}/weeklySchedule/{dayIndex})
@@ -1392,157 +1410,165 @@ interface UserProfile {
           setAssigningWorkoutToDayIndex(null);
         }
       }}>
-        <DialogContent className="w-[95vw] max-w-[600px] bg-white dark:bg-slate-900 max-h-[90vh] flex flex-col rounded-lg p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="text-slate-800 dark:text-slate-100">Create Your Workout Plan</DialogTitle>
-            <DialogDescription className="text-slate-600 dark:text-slate-400">
-              Tell us your preferences, and we&apos;ll generate a plan tailored to your needs.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="mb-4 border-b border-slate-200 dark:border-slate-700 flex">
-            <button
-              className={`px-4 py-2 font-medium text-sm rounded-t-md focus:outline-none transition-colors ${
-                activeTab === 'general' ? 'bg-white dark:bg-slate-900 text-orange-600 border-b-2 border-orange-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-              }`}
-              onClick={() => setActiveTab('general')}
-              type="button"
-            >
-              General
-            </button>
-            <button
-              className={`px-4 py-2 font-medium text-sm rounded-t-md focus:outline-none transition-colors ml-2 ${
-                activeTab === 'equipment' ? 'bg-white dark:bg-slate-900 text-orange-600 border-b-2 border-orange-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-              }`}
-              onClick={() => setActiveTab('equipment')}
-              type="button"
-            >
-              Equipment
-            </button>
+        <DialogContent className="w-[95vw] max-w-[600px] bg-white dark:bg-slate-900 max-h-[90vh] flex flex-col rounded-lg p-0 overflow-hidden">
+          <div className="p-4 sm:p-6 pb-0">
+            <DialogHeader>
+              <DialogTitle className="text-slate-800 dark:text-slate-100">Create Your Workout Plan</DialogTitle>
+              <DialogDescription className="text-slate-600 dark:text-slate-400">
+                Tell us your preferences, and we&apos;ll generate a plan tailored to your needs.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="mt-4 border-b border-slate-200 dark:border-slate-700 flex">
+              <button
+                className={`px-4 py-2 font-medium text-sm rounded-t-md focus:outline-none transition-colors ${
+                  activeTab === 'general' ? 'bg-white dark:bg-slate-900 text-orange-600 border-b-2 border-orange-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                }`}
+                onClick={() => setActiveTab('general')}
+                type="button"
+              >
+                General
+              </button>
+              <button
+                className={`px-4 py-2 font-medium text-sm rounded-t-md focus:outline-none transition-colors ml-2 ${
+                  activeTab === 'equipment' ? 'bg-white dark:bg-slate-900 text-orange-600 border-b-2 border-orange-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                }`}
+                onClick={() => setActiveTab('equipment')}
+                type="button"
+              >
+                Equipment
+              </button>
+            </div>
           </div>
 
-          {activeTab === 'general' && (
-            <div className="space-y-6 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Workout Duration</label>
-                <div className="flex items-center space-x-4">
-                  <input
-                    type="range"
-                    min={15}
-                    max={90}
-                    step={5}
-                    value={workoutDuration}
-                    onChange={e => setWorkoutDuration(Number(e.target.value))}
-                    className="w-full accent-orange-500"
-                  />
-                  <span className="ml-2 font-semibold text-slate-700 dark:text-slate-200 min-w-[80px] text-right">
-                    {workoutDuration < 60
-                      ? `${workoutDuration} minutes`
-                      : `${Math.floor(workoutDuration / 60)} hour${Math.floor(workoutDuration / 60) > 1 ? 's' : ''}${workoutDuration % 60 !== 0 ? `, ${workoutDuration % 60} minutes` : ''}`}
-                  </span>
+          {/* Scrollable content area */}
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+            {activeTab === 'general' && (
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Workout Duration</label>
+                  <div className="flex items-center space-x-4">
+                    <input
+                      type="range"
+                      min={15}
+                      max={90}
+                      step={5}
+                      value={workoutDuration}
+                      onChange={e => setWorkoutDuration(Number(e.target.value))}
+                      className="w-full accent-orange-500"
+                    />
+                    <span className="ml-2 font-semibold text-slate-700 dark:text-slate-200 min-w-[80px] text-right">
+                      {workoutDuration < 60
+                        ? `${workoutDuration} minutes`
+                        : `${Math.floor(workoutDuration / 60)} hour${Math.floor(workoutDuration / 60) > 1 ? 's' : ''}${workoutDuration % 60 !== 0 ? `, ${workoutDuration % 60} minutes` : ''}`}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Workout Type</label>
-                <div className="flex gap-4">
-                  <button
-                    type="button"
-                    className={`px-4 py-2 rounded border font-medium text-sm transition-colors ${
-                      workoutType === 'fullBody' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
-                    }`}
-                    onClick={() => setWorkoutType('fullBody')}
-                  >
-                    Full Body
-                  </button>
-                  <button
-                    type="button"
-                    className={`px-4 py-2 rounded border font-medium text-sm transition-colors ${
-                      workoutType === 'target-muscle' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
-                    }`}
-                    onClick={() => setWorkoutType('target-muscle')}
-                  >
-                    Target Muscle Group
-                  </button>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Workout Type</label>
+                  <div className="flex gap-2 sm:gap-4">
+                    <button
+                      type="button"
+                      className={`px-3 sm:px-4 py-2 rounded border font-medium text-sm transition-colors flex-1 ${
+                        workoutType === 'fullBody' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
+                      }`}
+                      onClick={() => setWorkoutType('fullBody')}
+                    >
+                      Full Body
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-3 sm:px-4 py-2 rounded border font-medium text-sm transition-colors flex-1 ${
+                        workoutType === 'target-muscle' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
+                      }`}
+                      onClick={() => setWorkoutType('target-muscle')}
+                    >
+                      Target Muscle Group
+                    </button>
+                  </div>
                 </div>
+                
+                {workoutType === 'target-muscle' && (
+                  <div className="space-y-4">
+                    {Object.entries(muscleGroups).map(([category, muscles]) => (
+                      <fieldset key={category} className="border-2 border-orange-300 dark:border-orange-700 rounded-md p-3">
+                        <legend className="font-semibold text-orange-700 dark:text-orange-300 text-xs px-2">{category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</legend>
+                        <div className="flex items-center mb-2">
+                          <input
+                            type="checkbox"
+                            id={`select-all-${category}`}
+                            checked={targetMuscles[category as keyof typeof muscleGroups].length === muscles.length}
+                            onChange={e => handleSelectAllMuscles(category as keyof typeof muscleGroups, e.target.checked)}
+                            className="mr-2 accent-orange-500"
+                          />
+                          <label htmlFor={`select-all-${category}`} className="text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer">Select all</label>
+                        </div>
+                        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+                          {muscles.map(muscle => (
+                            <label key={muscle} className="flex items-center text-xs text-slate-700 dark:text-slate-200 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={targetMuscles[category as keyof typeof muscleGroups].includes(muscle)}
+                                onChange={e => handleTargetMuscleChange(category as keyof typeof muscleGroups, muscle, e.target.checked)}
+                                className="mr-1 accent-orange-500"
+                              />
+                              {muscle}
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                    ))}
+                  </div>
+                )}
               </div>
-              
-              {workoutType === 'target-muscle' && (
-                <div className="space-y-4">
-                  {Object.entries(muscleGroups).map(([category, muscles]) => (
-                    <fieldset key={category} className="border-2 border-orange-300 dark:border-orange-700 rounded-md p-3">
-                      <legend className="font-semibold text-orange-700 dark:text-orange-300 text-xs px-2">{category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</legend>
-                      <div className="flex items-center mb-2">
+            )}
+
+            {activeTab === 'equipment' && (
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Available Equipment</label>
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+                    {equipmentList.map(eq => (
+                      <label key={eq} className="flex items-center text-xs text-slate-700 dark:text-slate-200 cursor-pointer">
                         <input
                           type="checkbox"
-                          id={`select-all-${category}`}
-                          checked={targetMuscles[category as keyof typeof muscleGroups].length === muscles.length}
-                          onChange={e => handleSelectAllMuscles(category as keyof typeof muscleGroups, e.target.checked)}
-                          className="mr-2 accent-orange-500"
+                          checked={selectedEquipment.includes(eq)}
+                          onChange={e => handleEquipmentChange(eq, e.target.checked)}
+                          className="mr-1 accent-orange-500"
                         />
-                        <label htmlFor={`select-all-${category}`} className="text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer">Select all</label>
-                      </div>
-                      <div className="flex flex-wrap gap-3">
-                        {muscles.map(muscle => (
-                          <label key={muscle} className="flex items-center text-xs text-slate-700 dark:text-slate-200 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={targetMuscles[category as keyof typeof muscleGroups].includes(muscle)}
-                              onChange={e => handleTargetMuscleChange(category as keyof typeof muscleGroups, muscle, e.target.checked)}
-                              className="mr-1 accent-orange-500"
-                            />
-                            {muscle}
-                          </label>
-                        ))}
-                      </div>
-                    </fieldset>
-                  ))}
+                        {eq}
+                      </label>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    className="mt-3 w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 text-sm"
+                    placeholder="Other equipment (comma separated)"
+                    value={otherEquipment}
+                    onChange={e => setOtherEquipment(e.target.value)}
+                  />
                 </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'equipment' && (
-            <div className="space-y-6 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Available Equipment</label>
-                <div className="flex flex-wrap gap-3">
-                  {equipmentList.map(eq => (
-                    <label key={eq} className="flex items-center text-xs text-slate-700 dark:text-slate-200 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedEquipment.includes(eq)}
-                        onChange={e => handleEquipmentChange(eq, e.target.checked)}
-                        className="mr-1 accent-orange-500"
-                      />
-                      {eq}
-                    </label>
-                  ))}
-                </div>
-                <input
-                  type="text"
-                  className="mt-3 w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2"
-                  placeholder="Other equipment (comma separated)"
-                  value={otherEquipment}
-                  onChange={e => setOtherEquipment(e.target.value)}
-                />
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          <DialogFooter className="mt-auto pt-4 shrink-0">
-            <DialogClose asChild>
-              <Button variant="outline" className="dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700">Cancel</Button>
-            </DialogClose>
-            <Button
-              onClick={handleGeneratePlanClick}
-              disabled={generating}
-              className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
-            >
-              {generating && assigningWorkoutToDayIndex === null ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Zap className="h-5 w-5 mr-2" />}
-              {assigningWorkoutToDayIndex !== null ? `Generate for ${DAYS_OF_WEEK_ABBREVIATED[assigningWorkoutToDayIndex]}` : "Generate Plan"}
-            </Button>
-          </DialogFooter>
+          {/* Sticky footer */}
+          <div className="border-t border-slate-200 dark:border-slate-700 p-4 sm:p-6 bg-white dark:bg-slate-900">
+            <DialogFooter className="gap-2 sm:gap-0">
+              <DialogClose asChild>
+                <Button variant="outline" className="dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 w-full sm:w-auto">Cancel</Button>
+              </DialogClose>
+              <Button
+                onClick={handleGeneratePlanClick}
+                disabled={generating}
+                className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 w-full sm:w-auto"
+              >
+                {generating && assigningWorkoutToDayIndex === null ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Zap className="h-5 w-5 mr-2" />}
+                {assigningWorkoutToDayIndex !== null ? `Generate for ${DAYS_OF_WEEK_ABBREVIATED[assigningWorkoutToDayIndex]}` : "Generate Plan"}
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -1733,9 +1759,6 @@ interface UserProfile {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Bottom Navigation for Mobile */}
-      <BottomNavigationBar onQuickWorkout={handleQuickWorkout} />
     </div>
   );
 }

@@ -864,18 +864,7 @@ interface UserProfile {
     "Stationary Bike", "Elliptical", "Yoga Mat"
   ];
 
-  // Quick workout generation function for bottom nav
-  const handleQuickWorkout = () => {
-    // Use default preferences for quick generation
-    const quickPreferences = {
-      duration: 45,
-      type: "fullBody",
-      muscles: null,
-      equipment: [],
-      otherEquipment: "",
-    };
-    generatePlan(quickPreferences);
-  };
+
 
   // Mobile Calendar View Component
   const MobileCalendarView = () => (

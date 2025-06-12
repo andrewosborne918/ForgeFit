@@ -1008,6 +1008,731 @@ interface UserProfile {
           <p className="text-slate-500 dark:text-slate-500 text-sm mt-2">Generate your first workout to get started!</p>
         </div>
       )}
+    </div>
+  );
+
+  return (
+    <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
+      {/* Mobile View Conditional Rendering */}
+      <div className="md:hidden">
+        {currentView === 'calendar' && <MobileCalendarView />}
+        {currentView === 'history' && <MobileHistoryView />}
+        {currentView === 'dashboard' && (
+          <>
+            {/* Current Workout Card for Mobile */}
+            {currentWorkout && (
+              <section className="mb-8">
+                <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg p-6">
+                  <h3 className="text-xl font-semibold mb-4 text-slate-700 dark:text-slate-200">Current Workout</h3>
+                  <div className="flex items-center space-x-4">
+                    {(currentWorkout.image || currentWorkout.imageUrl) ? (
+                      <div className="w-20 h-20 relative rounded-lg overflow-hidden flex-shrink-0">
+                        <Image
+                          src={currentWorkout.image || currentWorkout.imageUrl!}
+                          alt={currentWorkout.title || "Current workout"}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 bg-slate-200 dark:bg-slate-700 flex items-center justify-center rounded-lg flex-shrink-0">
+                        <ImageIcon className="h-10 w-10 text-slate-400 dark:text-slate-500" />
+                      </div>
+                    )}
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-primary dark:text-orange-400 truncate">
+                        {currentWorkout.plan?.title || currentWorkout.title || "Current Workout"}
+                      </h4>
+                      <p className="text-sm text-muted-foreground dark:text-slate-400">
+                        {currentWorkout.plan?.duration || currentWorkout.duration || "Not specified"}
+                      </p>
+                    </div>
+                    
+                    <Button
+                      onClick={() => {
+                        if (currentWorkout.id && user) {
+                          router.push(`/workout/${user.uid}/${currentWorkout.id}`);
+                        }
+                      }}
+                      disabled={!currentWorkout.id}
+                      className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+                    >
+                      Start
+                    </Button>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Quick Overview for Mobile */}
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-4">Quick Overview</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {weeklySchedule.filter(day => day?.type === 'workout').length}
+                  </div>
+                  <div className="text-sm text-blue-700 dark:text-blue-300">Workouts This Week</div>
+                </div>
+                <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {completedPlans.length}
+                  </div>
+                  <div className="text-sm text-green-700 dark:text-green-300">Total Workouts</div>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+      </div>
+
+      {/* Desktop View (Hidden on Mobile) */}
+      <div className="hidden md:block">
+        {/* Header */}
+        <header className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Welcome, {String(userProfile?.name || "let's get fit")}!</h1>
+            <p className="mt-2 text-lg text-muted-foreground dark:text-slate-400">
+              Ready to forge your best self? Let&apos;s get started.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="default" 
+              size="lg" 
+              className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+              onClick={() => setIsModalOpen(true)}
+            >
+              <Zap className="mr-2 h-5 w-5" /> Generate Workout
+            </Button>
+          </div>
+        </header>
+
+        {/* Weekly Schedule Section */}
+        <section className="mb-12">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 dark:text-slate-200">Weekly Schedule</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive border-destructive hover:bg-destructive/10 dark:text-red-500 dark:border-red-500 dark:hover:bg-red-900/20"
+              onClick={() => setIsClearAllDialogOpen(true)}
+            >
+              Clear All
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
+            {DAYS_OF_WEEK_ABBREVIATED.map((dayName, index) => {
+              const dayAssignment = weeklySchedule[index];
+              const isAssigningToThisDay = generating && assigningWorkoutToDayIndex === index;
+              const canInteractWithCard = !isAssigningToThisDay;
+              
+              return (
+                <div
+                  key={index}
+                  className={`rounded-lg p-3 sm:p-4 shadow-md flex flex-col items-center justify-start min-h-[160px] sm:min-h-[180px] relative transition-all duration-200 ease-in-out ${
+                    canInteractWithCard ? 'cursor-pointer hover:shadow-lg hover:border-orange-400 dark:hover:border-orange-500 border-2 border-transparent' : 'border-2 border-transparent'
+                  } ${
+                    isAssigningToThisDay 
+                      ? 'bg-slate-100 dark:bg-slate-800 ring-2 ring-orange-500 opacity-70' 
+                      : dayAssignment?.type === 'workout' 
+                        ? 'bg-blue-50 dark:bg-blue-900/30' 
+                        : dayAssignment?.type === 'rest' 
+                          ? 'bg-green-50 dark:bg-green-900/30' 
+                          : dayAssignment?.type === 'stretch' 
+                            ? 'bg-yellow-50 dark:bg-yellow-900/30' 
+                            : 'bg-slate-50 dark:bg-slate-800/60'
+                  }`}
+                  onClick={() => canInteractWithCard && handleDayCardClick(index)}
+                  onDragOver={canInteractWithCard ? handleDragOver : undefined}
+                  onDrop={canInteractWithCard ? (e) => handleDrop(e, index) : undefined}
+                >
+                  {/* Edit button for assigned workouts */}
+                  {dayAssignment?.type === 'workout' && canInteractWithCard && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleOpenWorkoutEditModal(index, e)}
+                      className="absolute top-1 right-1 z-20 p-1 h-7 w-7 bg-slate-100/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      <Edit3 size={16} />
+                    </Button>
+                  )}
+
+                  {isAssigningToThisDay ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 dark:bg-slate-800/70 rounded-lg">
+                      <Loader2 className="animate-spin h-8 w-8 text-orange-500" />
+                      <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">Assigning...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="font-semibold text-sm sm:text-base text-slate-700 dark:text-slate-200 mb-1 sm:mb-2">{dayName}</p>
+                      {dayAssignment?.type === 'workout' && dayAssignment.workoutDetails ? (
+                        <div
+                          className="w-full text-center p-1 sm:p-2 rounded bg-blue-100 dark:bg-blue-800/50 text-blue-700 dark:text-blue-300 text-xs sm:text-sm flex flex-col items-center cursor-pointer hover:ring-2 hover:ring-blue-400 dark:hover:ring-blue-500"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (dayAssignment?.type === 'workout' && dayAssignment.workoutDetails?.planId && user?.uid) {
+                              router.push(`/workout/${user.uid}/${dayAssignment.workoutDetails.planId}`);
+                            }
+                          }}
+                          draggable={true}
+                          onDragStart={(e) => dayAssignment.workoutDetails && handleDragStart(e, dayAssignment.workoutDetails)}
+                        >
+                          {dayAssignment.workoutDetails.imageUrl && 
+                            <Image src={dayAssignment.workoutDetails.imageUrl} alt="Workout" width={80} height={60} className="rounded object-cover mb-1 h-12 sm:h-16 w-full pointer-events-none" />
+                          }
+                          <span className="font-medium block truncate w-full pointer-events-none" title={dayAssignment.workoutDetails.title}>{dayAssignment.workoutDetails.title}</span>
+                          <span className="text-xs text-blue-600 dark:text-blue-400 pointer-events-none">{dayAssignment.workoutDetails.duration}</span>
+                        </div>
+                      ) : dayAssignment?.type === 'rest' ? (
+                        <div className="text-center pointer-events-none">
+                          <Coffee size={24} className="text-green-500 dark:text-green-400 mx-auto mb-1" />
+                          <p className="text-xs sm:text-sm text-green-600 dark:text-green-300">Rest Day</p>
+                        </div>
+                      ) : dayAssignment?.type === 'stretch' ? (
+                        <div className="text-center pointer-events-none">
+                          <Repeat size={24} className="text-yellow-500 dark:text-yellow-400 mx-auto mb-1" />
+                          <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-300">Stretch Day</p>
+                        </div>
+                      ) : (
+                        <div className="text-center pointer-events-none">
+                          <PlusCircle size={24} className="text-slate-400 dark:text-slate-500 mx-auto mb-1" />
+                          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Assign</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Workout History and Generate Plan section */}
+        <section className="mb-12">
+          <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+            {/* Workout History Card */}
+            <div className="flex-1 min-w-0 flex flex-col">
+              <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg p-6 flex flex-col h-[540px]">
+                <h3 className="text-xl font-semibold mb-4 text-slate-700 dark:text-slate-200">Workout History</h3>
+                {completedPlans.length > 0 ? (
+                  <div className="flex-1 space-y-4 overflow-y-auto">
+                    {completedPlans.map((p) => {
+                      const planTitle = p.plan?.plan?.title || p.plan?.title || "Unnamed Workout";
+                      const planDurationValue = p.plan?.plan?.duration || p.plan?.duration;
+                      const planDuration = planDurationValue 
+                        ? (typeof planDurationValue === 'number' ? formatDuration(planDurationValue) : planDurationValue.toString())
+                        : "Duration not set";
+                      const planImage = p.image || p.plan?.imageUrl || p.plan?.image;
+                      
+                      return (
+                        <div
+                          key={p.id}
+                          className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-md shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0"
+                        >
+                          <div className="flex items-center space-x-3 flex-grow">
+                            {planImage ? (
+                              <div className="w-12 h-12 relative rounded-md overflow-hidden flex-shrink-0">
+                                <Image
+                                  src={planImage}
+                                  alt={planTitle}
+                                  fill
+                                  sizes="48px"
+                                  className="object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-12 h-12 flex items-center justify-center bg-slate-200 dark:bg-slate-700 rounded-md flex-shrink-0">
+                                <ImageIcon className="h-6 w-6 text-slate-400 dark:text-slate-500" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <Link href={`/workout/${user?.uid}/${p.id}`} className="font-medium text-primary dark:text-orange-400 hover:underline">
+                                {planTitle}
+                              </Link>
+                              <p className="text-xs text-muted-foreground dark:text-slate-400 truncate">
+                                {planDuration}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2 flex-shrink-0">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setPlanToDelete(p.id)} className="text-destructive hover:text-destructive/80 dark:text-red-500 dark:hover:text-red-400 w-8 h-8">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              {planToDelete === p.id && (
+                                <AlertDialogContent className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This action cannot be undone. This will permanently delete the workout log for &quot;{planTitle}&quot;.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={() => setPlanToDelete(null)} className="dark:text-slate-100 dark:border-slate-600 dark:hover:bg-slate-700">Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeletePlan(p.id)} className="bg-destructive hover:bg-destructive/90 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white">Delete</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              )}
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className="text-muted-foreground dark:text-slate-400">No completed workouts yet. Go crush one!</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Generate Plan Card or Current Workout Card */}
+            <div className="flex-1 min-w-0 flex flex-col">
+              <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg overflow-hidden flex flex-col items-center text-center p-6 md:p-8 h-[540px] justify-between">
+                {currentWorkout ? (
+                  <>
+                    <div className="w-full flex justify-end mb-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsModalOpen(true)}
+                        className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                      >
+                        <Repeat className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    
+                    {(currentWorkout.image || currentWorkout.imageUrl) ? (
+                      <div className="w-full max-w-[220px] aspect-square relative mb-4 rounded-lg overflow-hidden">
+                        <Image
+                          src={currentWorkout.image || currentWorkout.imageUrl!}
+                          alt={currentWorkout.title || "Current workout"}
+                          fill
+                          sizes="220px"
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full max-w-[220px] aspect-square bg-slate-200 dark:bg-slate-700 flex items-center justify-center mb-4 rounded-lg">
+                        <ImageIcon className="h-20 w-20 text-slate-400 dark:text-slate-500" />
+                      </div>
+                    )}
+                    
+                    <div className="flex-1 flex flex-col justify-center mb-4">
+                      <h3 className="text-xl font-bold text-primary dark:text-orange-400 mb-2">
+                        {currentWorkout.plan?.title || currentWorkout.title || "Current Workout"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground dark:text-slate-400 mb-4">
+                        Duration: {currentWorkout.plan?.duration || currentWorkout.duration || "Not specified"}
+                      </p>
+                    </div>
+                    
+                    <Button
+                      variant="default"
+                      size="lg"
+                      className="w-full max-w-xs bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+                      onClick={() => {
+                        if (currentWorkout.id && user) {
+                          router.push(`/workout/${user.uid}/${currentWorkout.id}`);
+                        }
+                      }}
+                      disabled={!currentWorkout.id}
+                    >
+                      <Zap className="mr-2 h-5 w-5" /> Start Workout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {generatePlanCardImage ? (
+                      <div className="w-full max-w-[220px] aspect-square relative mb-6 rounded-lg overflow-hidden">
+                        <Image
+                          src={generatePlanCardImage}
+                          alt="Generate new workout plan"
+                          fill
+                          sizes="220px"
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full max-w-[220px] aspect-square bg-slate-200 dark:bg-slate-700 flex items-center justify-center mb-6 rounded-lg">
+                        <ImageIcon className="h-20 w-20 text-slate-400 dark:text-slate-500" />
+                      </div>
+                    )}
+                    <h3 className="text-xl font-bold text-primary dark:text-orange-400 mb-2">Generate a Single Plan</h3>
+                    <p className="text-sm text-muted-foreground dark:text-slate-400 mb-4 max-w-xs">
+                      Ready to forge your best self? Let our AI craft a personalized workout plan just for you.
+                    </p>
+                    <Button
+                      variant="default"
+                      size="lg"
+                      className="w-full max-w-xs bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 mt-auto"
+                      onClick={() => setIsModalOpen(true)}
+                    >
+                      <Zap className="mr-2 h-5 w-5" /> Generate New Plan
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Modal for plan creation */}
+      <Dialog open={isModalOpen} onOpenChange={(isOpen) => {
+        setIsModalOpen(isOpen);
+        if (!isOpen && !(generating && assigningWorkoutToDayIndex !== null)) {
+          setAssigningWorkoutToDayIndex(null);
+        }
+      }}>
+        <DialogContent className="w-[95vw] max-w-[600px] bg-white dark:bg-slate-900 max-h-[90vh] flex flex-col rounded-lg p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="text-slate-800 dark:text-slate-100">Create Your Workout Plan</DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-400">
+              Tell us your preferences, and we&apos;ll generate a plan tailored to your needs.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mb-4 border-b border-slate-200 dark:border-slate-700 flex">
+            <button
+              className={`px-4 py-2 font-medium text-sm rounded-t-md focus:outline-none transition-colors ${
+                activeTab === 'general' ? 'bg-white dark:bg-slate-900 text-orange-600 border-b-2 border-orange-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+              }`}
+              onClick={() => setActiveTab('general')}
+              type="button"
+            >
+              General
+            </button>
+            <button
+              className={`px-4 py-2 font-medium text-sm rounded-t-md focus:outline-none transition-colors ml-2 ${
+                activeTab === 'equipment' ? 'bg-white dark:bg-slate-900 text-orange-600 border-b-2 border-orange-500' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+              }`}
+              onClick={() => setActiveTab('equipment')}
+              type="button"
+            >
+              Equipment
+            </button>
+          </div>
+
+          {activeTab === 'general' && (
+            <div className="space-y-6 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Workout Duration</label>
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="range"
+                    min={15}
+                    max={90}
+                    step={5}
+                    value={workoutDuration}
+                    onChange={e => setWorkoutDuration(Number(e.target.value))}
+                    className="w-full accent-orange-500"
+                  />
+                  <span className="ml-2 font-semibold text-slate-700 dark:text-slate-200 min-w-[80px] text-right">
+                    {workoutDuration < 60
+                      ? `${workoutDuration} minutes`
+                      : `${Math.floor(workoutDuration / 60)} hour${Math.floor(workoutDuration / 60) > 1 ? 's' : ''}${workoutDuration % 60 !== 0 ? `, ${workoutDuration % 60} minutes` : ''}`}
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Workout Type</label>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    className={`px-4 py-2 rounded border font-medium text-sm transition-colors ${
+                      workoutType === 'fullBody' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
+                    }`}
+                    onClick={() => setWorkoutType('fullBody')}
+                  >
+                    Full Body
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-4 py-2 rounded border font-medium text-sm transition-colors ${
+                      workoutType === 'target-muscle' ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
+                    }`}
+                    onClick={() => setWorkoutType('target-muscle')}
+                  >
+                    Target Muscle Group
+                  </button>
+                </div>
+              </div>
+              
+              {workoutType === 'target-muscle' && (
+                <div className="space-y-4">
+                  {Object.entries(muscleGroups).map(([category, muscles]) => (
+                    <fieldset key={category} className="border-2 border-orange-300 dark:border-orange-700 rounded-md p-3">
+                      <legend className="font-semibold text-orange-700 dark:text-orange-300 text-xs px-2">{category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</legend>
+                      <div className="flex items-center mb-2">
+                        <input
+                          type="checkbox"
+                          id={`select-all-${category}`}
+                          checked={targetMuscles[category as keyof typeof muscleGroups].length === muscles.length}
+                          onChange={e => handleSelectAllMuscles(category as keyof typeof muscleGroups, e.target.checked)}
+                          className="mr-2 accent-orange-500"
+                        />
+                        <label htmlFor={`select-all-${category}`} className="text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer">Select all</label>
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        {muscles.map(muscle => (
+                          <label key={muscle} className="flex items-center text-xs text-slate-700 dark:text-slate-200 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={targetMuscles[category as keyof typeof muscleGroups].includes(muscle)}
+                              onChange={e => handleTargetMuscleChange(category as keyof typeof muscleGroups, muscle, e.target.checked)}
+                              className="mr-1 accent-orange-500"
+                            />
+                            {muscle}
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'equipment' && (
+            <div className="space-y-6 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Available Equipment</label>
+                <div className="flex flex-wrap gap-3">
+                  {equipmentList.map(eq => (
+                    <label key={eq} className="flex items-center text-xs text-slate-700 dark:text-slate-200 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedEquipment.includes(eq)}
+                        onChange={e => handleEquipmentChange(eq, e.target.checked)}
+                        className="mr-1 accent-orange-500"
+                      />
+                      {eq}
+                    </label>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  className="mt-3 w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2"
+                  placeholder="Other equipment (comma separated)"
+                  value={otherEquipment}
+                  onChange={e => setOtherEquipment(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="mt-auto pt-4 shrink-0">
+            <DialogClose asChild>
+              <Button variant="outline" className="dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700">Cancel</Button>
+            </DialogClose>
+            <Button
+              onClick={handleGeneratePlanClick}
+              disabled={generating}
+              className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+            >
+              {generating && assigningWorkoutToDayIndex === null ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Zap className="h-5 w-5 mr-2" />}
+              {assigningWorkoutToDayIndex !== null ? `Generate for ${DAYS_OF_WEEK_ABBREVIATED[assigningWorkoutToDayIndex]}` : "Generate Plan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Day Options Modal */}
+      {selectedDayIndex !== null && (
+        <Dialog open={isDayOptionsModalOpen} onOpenChange={(isOpen) => {
+          setIsDayOptionsModalOpen(isOpen);
+          if (!isOpen) setSelectedDayIndex(null);
+        }}>
+          <DialogContent className="bg-white dark:bg-slate-900">
+            <DialogHeader>
+              <DialogTitle className="text-slate-800 dark:text-slate-100">Options for {DAYS_OF_WEEK_ABBREVIATED[selectedDayIndex]}</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-3">
+              {weeklySchedule[selectedDayIndex]?.type === 'workout' && weeklySchedule[selectedDayIndex]?.workoutDetails?.planId && (
+                <Button
+                  onClick={() => {
+                    if (user?.uid && weeklySchedule[selectedDayIndex]?.workoutDetails?.planId) {
+                      router.push(`/workout/${user.uid}/${weeklySchedule[selectedDayIndex]!.workoutDetails!.planId}`);
+                      setIsDayOptionsModalOpen(false);
+                      setSelectedDayIndex(null);
+                    }
+                  }}
+                  className="w-full justify-start bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-600 dark:hover:bg-blue-700"
+                >
+                  <Eye size={18} className="mr-2" /> View Workout Details
+                </Button>
+              )}
+              <Button 
+                onClick={() => {
+                  setIsDayOptionsModalOpen(false);
+                  setAssigningWorkoutToDayIndex(selectedDayIndex);
+                  setIsModalOpen(true);
+                }}
+                className="w-full justify-start bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+              >
+                <Zap size={18} className="mr-2" /> 
+                {weeklySchedule[selectedDayIndex]?.type === 'workout' ? 'Replace with New Workout' : 'Assign New Workout'}
+              </Button>
+              <Button 
+                onClick={() => handleSetDayAsType(selectedDayIndex!, 'rest')} 
+                className="w-full justify-start bg-green-500 hover:bg-green-600 text-white dark:bg-green-600 dark:hover:bg-green-700"
+              >
+                <Coffee size={18} className="mr-2" /> Set as Rest Day
+              </Button>
+              <Button 
+                onClick={() => handleSetDayAsType(selectedDayIndex!, 'stretch')} 
+                className="w-full justify-start bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-600 dark:hover:bg-yellow-700"
+              >
+                <Repeat size={18} className="mr-2" /> Set as Stretch Day
+              </Button>
+              {weeklySchedule[selectedDayIndex!] !== null && (
+                <Button 
+                  onClick={() => handleUnassignDay(selectedDayIndex!)}
+                  variant="outline" 
+                  className="w-full justify-start text-destructive hover:text-destructive/90 dark:text-red-500 dark:hover:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20"
+                >
+                  <XCircle size={18} className="mr-2" /> Unassign
+                </Button>
+              )}
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="ghost" className="dark:text-slate-300">Close</Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Workout Edit Modal */}
+      {dayIndexForWorkoutEdit !== null && (
+        <Dialog open={isWorkoutEditModalOpen} onOpenChange={(isOpen) => {
+          setIsWorkoutEditModalOpen(isOpen);
+          if (!isOpen) setDayIndexForWorkoutEdit(null);
+        }}>
+          <DialogContent className="bg-white dark:bg-slate-900">
+            <DialogHeader>
+              <DialogTitle className="text-slate-800 dark:text-slate-100">
+                Edit Assignment for {DAYS_OF_WEEK_ABBREVIATED[dayIndexForWorkoutEdit]}
+              </DialogTitle>
+              {weeklySchedule[dayIndexForWorkoutEdit]?.type === 'workout' && weeklySchedule[dayIndexForWorkoutEdit]?.workoutDetails && (
+                <DialogDescription className="text-slate-600 dark:text-slate-400">
+                  Current: {weeklySchedule[dayIndexForWorkoutEdit]!.workoutDetails!.title}
+                </DialogDescription>
+              )}
+            </DialogHeader>
+            <div className="py-4 space-y-3">
+              <Button 
+                onClick={handleReplaceWorkoutFromModal} 
+                className="w-full justify-start bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+              >
+                <Zap size={18} className="mr-2" /> Replace with New Workout
+              </Button>
+              <Button 
+                onClick={() => handleUnassignDay(dayIndexForWorkoutEdit!)} 
+                variant="outline" 
+                className="w-full justify-start text-destructive hover:text-destructive/90 dark:text-red-500 dark:hover:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20"
+              >
+                <Trash2 size={18} className="mr-2" /> Unassign Workout
+              </Button>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="ghost" className="dark:text-slate-300">Close</Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Clear All Dialog */}
+      <Dialog open={isClearAllDialogOpen} onOpenChange={setIsClearAllDialogOpen}>
+        <DialogContent className="bg-white dark:bg-slate-900">
+          <DialogHeader>
+            <DialogTitle className="text-slate-800 dark:text-slate-100">Clear All Assignments?</DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-400">
+              This will remove all assignments from your weekly schedule. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" className="dark:text-slate-300" onClick={() => setIsClearAllDialogOpen(false)}>Cancel</Button>
+            </DialogClose>
+            <Button
+              className="bg-destructive hover:bg-destructive/90 dark:bg-red-600 dark:hover:bg-red-700 text-white"
+              onClick={handleClearAllAssignments}
+            >
+              Yes, Clear All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Subscription Modal */}
+      <Dialog open={isSubscriptionModalOpen} onOpenChange={setIsSubscriptionModalOpen}>
+        <DialogContent className="bg-white dark:bg-slate-900 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-slate-800 dark:text-slate-100">Upgrade to Premium</DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-400">
+              You&apos;ve reached your free workout limit. Subscribe to unlock unlimited workouts.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col space-y-4 py-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-orange-500 mb-2">$9.99/month</div>
+              <ul className="text-left space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                <li>✓ Unlimited AI-generated workout plans</li>
+                <li>✓ Personalized to your goals & equipment</li>
+                <li>✓ Detailed progress tracking & analytics</li>
+                <li>✓ Full exercise library access</li>
+                <li>✓ Weekly workout schedule</li>
+                <li>✓ Priority support</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <DialogClose asChild>
+              <Button variant="outline" className="dark:text-slate-300">
+                Maybe Later
+              </Button>
+            </DialogClose>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+              onClick={async () => {
+                if (!user) return;
+                try {
+                  const response = await fetch('/api/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.uid,
+                      email: user.email
+                    })
+                  });
+                  
+                  const { url } = await response.json();
+                  if (url) {
+                    window.location.href = url;
+                  }
+                } catch (error) {
+                  console.error('Error creating checkout session:', error);
+                }
+              }}
+            >
+              Subscribe Now
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Bottom Navigation for Mobile */}
       <BottomNavigationBar onQuickWorkout={handleQuickWorkout} />

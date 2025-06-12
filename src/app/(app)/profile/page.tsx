@@ -255,7 +255,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 py-12 pb-20 md:pb-12">
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-12 pb-safe-24 md:pb-12">
       {/* Background Grid */}
       <BackgroundGrid />
       
@@ -343,9 +343,9 @@ export default function ProfilePage() {
           </div>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-700 dark:text-slate-300">Email Address:</span>
-              <span className="font-medium text-slate-900 dark:text-white">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <span className="text-slate-700 dark:text-slate-300 flex-shrink-0">Email Address:</span>
+              <span className="font-medium text-slate-900 dark:text-white break-all text-right sm:text-left">
                 {user?.email || "Not available"}
               </span>
             </div>

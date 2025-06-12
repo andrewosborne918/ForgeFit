@@ -8,6 +8,7 @@ import { GlobalBottomNavigation } from "@/components/GlobalBottomNavigation"
 export const metadata = {
   title: "ForgeFit",
   description: "Your AI-powered fitness coach",
+  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
 }
 
 export default function RootLayout({

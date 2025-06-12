@@ -122,7 +122,7 @@ export function BottomNavigationBar({ onQuickWorkout, currentView = 'dashboard',
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-white dark:bg-slate-900 shadow-lg md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-white dark:bg-slate-900 shadow-lg md:hidden pb-safe">
       <div className="flex justify-around items-center py-2 px-2">
         {navItems.map(({ key, icon: Icon, label, action, isActive, isSpecial }) => (
           <button

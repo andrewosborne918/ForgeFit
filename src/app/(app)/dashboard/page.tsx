@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext'; // Changed useAuth to useAppContext
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { app, isFirebaseConfigured } from '@/lib/firebase'; // Import app and isFirebaseConfigured
 import { getFirestore, setDoc, doc, collection, query, orderBy, getDocs, deleteDoc, getDoc, writeBatch } from 'firebase/firestore'; // Import firestore functions
 // import LOADING_MESSAGES from "@/lib/loadingMessages" 
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"; 
 import Link from 'next/link'; 
 import { Loader2, Edit3, PlusCircle, Coffee, Repeat, Zap, /* CalendarPlus, */ Trash2, ImageIcon, XCircle, Eye } from "lucide-react"; // Added Eye icon
+import { BottomNavigationBar } from "@/components/BottomNavigationBar";
 // import { Slider } from "@/components/ui/slider"
 // import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
@@ -93,6 +94,7 @@ function getNextWorkoutImage(gender: string): string {
 export default function DashboardPage() {
   const { user, userProfile, setUserProfile, loading: authLoading } = useAppContext();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   // All React hooks must be called at the top level, before any early returns
   const [isModalOpen, setIsModalOpen] = useState(false); // This state controls the main generation modal
@@ -139,6 +141,33 @@ export default function DashboardPage() {
   const [dayIndexForWorkoutEdit, setDayIndexForWorkoutEdit] = useState<number | null>(null);
 
   const [isClearAllDialogOpen, setIsClearAllDialogOpen] = useState(false); // State for Clear All confirmation dialog
+
+  // Mobile view state for bottom navigation
+  const [currentView, setCurrentView] = useState<'dashboard' | 'calendar' | 'history'>('dashboard');
+
+  // Check URL parameters for navigation state
+  useEffect(() => {
+    if (!searchParams) return;
+    
+    const view = searchParams.get('view');
+    const shouldGenerate = searchParams.get('generate');
+    
+    if (view === 'calendar') {
+      setCurrentView('calendar');
+    } else if (view === 'history') {
+      setCurrentView('history');
+    } else {
+      setCurrentView('dashboard');
+    }
+    
+    if (shouldGenerate === 'true') {
+      setIsModalOpen(true);
+      // Remove the parameter from URL to prevent repeated triggering
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('generate');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [searchParams]);
 
   // All useEffect hooks must be called before any early returns
   // 1. On mount, load weeklySchedule from Firestore subcollection (users/{uid}/weeklySchedule/{dayIndex})
@@ -817,8 +846,173 @@ interface UserProfile {
     "Stationary Bike", "Elliptical", "Yoga Mat"
   ];
 
+  // Quick workout generation function for bottom nav
+  const handleQuickWorkout = () => {
+    // Use default preferences for quick generation
+    const quickPreferences = {
+      duration: 45,
+      type: "fullBody",
+      muscles: null,
+      equipment: [],
+      otherEquipment: "",
+    };
+    generatePlan(quickPreferences);
+  };
+
+  // Mobile Calendar View Component
+  const MobileCalendarView = () => (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold text-slate-700 dark:text-slate-200 mb-6">Weekly Schedule</h2>
+      <div className="space-y-3">
+        {DAYS_OF_WEEK_ABBREVIATED.map((dayName, index) => {
+          const dayAssignment = weeklySchedule[index];
+          const isAssigningToThisDay = generating && assigningWorkoutToDayIndex === index;
+          const fullDayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][index];
+          
+          return (
+            <div
+              key={index}
+              className={`rounded-lg p-4 shadow-md border-2 transition-all duration-200 ${
+                isAssigningToThisDay 
+                  ? 'bg-slate-100 dark:bg-slate-800 border-orange-500 opacity-70' 
+                  : dayAssignment?.type === 'workout' 
+                    ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800' 
+                    : dayAssignment?.type === 'rest' 
+                      ? 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800' 
+                      : dayAssignment?.type === 'stretch' 
+                        ? 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800' 
+                        : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700'
+              }`}
+              onClick={() => !isAssigningToThisDay && handleDayCardClick(index)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-slate-700 dark:text-slate-200">{fullDayName}</h3>
+                    {dayAssignment?.type === 'workout' && dayAssignment.workoutDetails ? (
+                      <div className="mt-2">
+                        <p className="font-medium text-blue-700 dark:text-blue-300 truncate">
+                          {dayAssignment.workoutDetails.title}
+                        </p>
+                        <p className="text-sm text-blue-600 dark:text-blue-400">
+                          {dayAssignment.workoutDetails.duration}
+                        </p>
+                      </div>
+                    ) : dayAssignment?.type === 'rest' ? (
+                      <p className="text-green-600 dark:text-green-300 mt-1">Rest Day</p>
+                    ) : dayAssignment?.type === 'stretch' ? (
+                      <p className="text-yellow-600 dark:text-yellow-300 mt-1">Stretch Day</p>
+                    ) : (
+                      <p className="text-slate-500 dark:text-slate-400 mt-1">No assignment</p>
+                    )}
+                  </div>
+                </div>
+                
+                {dayAssignment?.type === 'workout' && dayAssignment.workoutDetails?.imageUrl && (
+                  <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                    <Image 
+                      src={dayAssignment.workoutDetails.imageUrl} 
+                      alt="Workout" 
+                      width={64} 
+                      height={64} 
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
+                )}
+                
+                {isAssigningToThisDay && (
+                  <Loader2 className="animate-spin h-6 w-6 text-orange-500" />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // Mobile History View Component
+  const MobileHistoryView = () => (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold text-slate-700 dark:text-slate-200 mb-6">Workout History</h2>
+      {completedPlans.length > 0 ? (
+        <div className="space-y-3">
+          {completedPlans.map((p) => {
+            const planTitle = p.plan?.plan?.title || p.plan?.title || "Unnamed Workout";
+            const planDurationValue = p.plan?.plan?.duration || p.plan?.duration;
+            const planDuration = planDurationValue 
+              ? (typeof planDurationValue === 'number' ? formatDuration(planDurationValue) : planDurationValue.toString())
+              : "Duration not set";
+            const planImage = p.image || p.plan?.imageUrl || p.plan?.image;
+            
+            return (
+              <div
+                key={p.id}
+                className="p-4 bg-white dark:bg-slate-800/50 rounded-lg shadow-md border border-slate-200 dark:border-slate-700"
+              >
+                <div className="flex items-center space-x-4">
+                  {planImage ? (
+                    <div className="w-16 h-16 relative rounded-lg overflow-hidden flex-shrink-0">
+                      <Image
+                        src={planImage}
+                        alt={planTitle}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 flex items-center justify-center bg-slate-200 dark:bg-slate-700 rounded-lg flex-shrink-0">
+                      <ImageIcon className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+                    </div>
+                  )}
+                  
+                  <div className="flex-1 min-w-0">
+                    <Link 
+                      href={`/workout/${user?.uid}/${p.id}`} 
+                      className="font-medium text-primary dark:text-orange-400 hover:underline block truncate"
+                    >
+                      {planTitle}
+                    </Link>
+                    <p className="text-sm text-muted-foreground dark:text-slate-400 mt-1">
+                      {planDuration}
+                    </p>
+                    {p.createdAt && (
+                      <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                        {new Date(p.createdAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (user?.uid) {
+                        router.push(`/workout/${user.uid}/${p.id}`);
+                      }
+                    }}
+                    className="flex-shrink-0"
+                  >
+                    Start
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <ImageIcon className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <p className="text-muted-foreground dark:text-slate-400 text-lg">No completed workouts yet</p>
+          <p className="text-slate-500 dark:text-slate-500 text-sm mt-2">Generate your first workout to get started!</p>
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
       {/* MOVED AND MODIFIED HEADER STARTS HERE */}
       <header className="mb-8 flex justify-between items-center">
         <div>
@@ -827,7 +1021,7 @@ interface UserProfile {
             Ready to forge your best self? Let&apos;s get started.
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 hidden md:flex">
           <Button 
             variant="default" 
             size="lg" 
@@ -840,18 +1034,95 @@ interface UserProfile {
       </header>
       {/* MOVED AND MODIFIED HEADER ENDS HERE */}
 
-      <section className="mb-12">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold text-slate-700 dark:text-slate-200">Weekly Schedule</h2>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-destructive border-destructive hover:bg-destructive/10 dark:text-red-500 dark:border-red-500 dark:hover:bg-red-900/20 ml-2"
-            onClick={() => setIsClearAllDialogOpen(true)}
-          >
-            Clear All
-          </Button>
-        </div>
+      {/* Mobile View Conditional Rendering */}
+      <div className="md:hidden">
+        {currentView === 'calendar' && <MobileCalendarView />}
+        {currentView === 'history' && <MobileHistoryView />}
+        {currentView === 'dashboard' && (
+          <>
+            {/* Current Workout Card for Mobile */}
+            {currentWorkout && (
+              <section className="mb-8">
+                <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg p-6">
+                  <h3 className="text-xl font-semibold mb-4 text-slate-700 dark:text-slate-200">Current Workout</h3>
+                  <div className="flex items-center space-x-4">
+                    {(currentWorkout.image || currentWorkout.imageUrl) ? (
+                      <div className="w-20 h-20 relative rounded-lg overflow-hidden flex-shrink-0">
+                        <Image
+                          src={currentWorkout.image || currentWorkout.imageUrl!}
+                          alt={currentWorkout.title || "Current workout"}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 bg-slate-200 dark:bg-slate-700 flex items-center justify-center rounded-lg flex-shrink-0">
+                        <ImageIcon className="h-10 w-10 text-slate-400 dark:text-slate-500" />
+                      </div>
+                    )}
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-primary dark:text-orange-400 truncate">
+                        {currentWorkout.plan?.title || currentWorkout.title || "Current Workout"}
+                      </h4>
+                      <p className="text-sm text-muted-foreground dark:text-slate-400">
+                        {currentWorkout.plan?.duration || currentWorkout.duration || "Not specified"}
+                      </p>
+                    </div>
+                    
+                    <Button
+                      onClick={() => {
+                        if (currentWorkout.id && user) {
+                          router.push(`/workout/${user.uid}/${currentWorkout.id}`);
+                        }
+                      }}
+                      disabled={!currentWorkout.id}
+                      className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+                    >
+                      Start
+                    </Button>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Quick Overview for Mobile */}
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-4">Quick Overview</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {weeklySchedule.filter(day => day?.type === 'workout').length}
+                  </div>
+                  <div className="text-sm text-blue-700 dark:text-blue-300">Workouts This Week</div>
+                </div>
+                <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {completedPlans.length}
+                  </div>
+                  <div className="text-sm text-green-700 dark:text-green-300">Total Workouts</div>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+      </div>
+
+      {/* Desktop View (Hidden on Mobile) */}
+      <div className="hidden md:block">
+        <section className="mb-12">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-slate-700 dark:text-slate-200">Weekly Schedule</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive border-destructive hover:bg-destructive/10 dark:text-red-500 dark:border-red-500 dark:hover:bg-red-900/20 ml-2"
+              onClick={() => setIsClearAllDialogOpen(true)}
+            >
+              Clear All
+            </Button>
+          </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
           {DAYS_OF_WEEK_ABBREVIATED.map((dayName, index) => {
             const dayAssignment = weeklySchedule[index];
@@ -1473,6 +1744,9 @@ interface UserProfile {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNavigationBar onQuickWorkout={handleQuickWorkout} />
     </div>
   )
 }

@@ -64,10 +64,9 @@ interface DeletionResult {
 
 interface AccountDeletionProps {
   userId: string
-  userEmail: string
 }
 
-export function AccountDeletion({ userId, userEmail }: AccountDeletionProps) {
+export function AccountDeletion({ userId }: AccountDeletionProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)

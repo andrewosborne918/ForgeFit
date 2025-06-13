@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
           const fingerprint = data.fingerprint;
           fingerprintCounts.set(fingerprint, (fingerprintCounts.get(fingerprint) || 0) + 1);
         });
-        return Array.from(fingerprintCounts.entries()).filter(([_, count]) => count > 1);
+        return Array.from(fingerprintCounts.entries()).filter(([, count]) => count > 1);
       })
     ]);
 
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       },
       details: {
         topRepeatDevices: Array.from(fingerprintGroups.entries())
-          .filter(([_, devices]) => devices.length > 1)
+          .filter(([, devices]) => devices.length > 1)
           .sort((a, b) => b[1].length - a[1].length)
           .slice(0, 10)
           .map(([fingerprint, devices]) => ({
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
             lastSeen: devices[devices.length - 1].lastSeen
           })),
         topRepeatIPs: Array.from(ipGroups.entries())
-          .filter(([_, ips]) => ips.length > 1)
+          .filter(([, ips]) => ips.length > 1)
           .sort((a, b) => b[1].length - a[1].length)
           .slice(0, 10)
           .map(([ip, ips]) => ({

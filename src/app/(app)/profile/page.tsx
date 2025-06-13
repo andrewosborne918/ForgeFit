@@ -384,7 +384,6 @@ export default function ProfilePage() {
               {user && (
                 <AccountDeletion 
                   userId={user.uid} 
-                  userEmail={user.email || ''} 
                 />
               )}
             </div>

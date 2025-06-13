@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     // Step 1: Get user data before deletion (for logging and Stripe cleanup)
     console.log('📋 Retrieving user data before deletion...');
-    let userData: any = null;
+    let userData: Record<string, unknown> | null = null;
     try {
       const userDoc = await adminDB.collection('users').doc(userId).get();
       if (userDoc.exists) {

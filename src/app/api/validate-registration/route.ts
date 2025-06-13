@@ -13,9 +13,9 @@ interface ValidationResult {
   riskLevel: 'low' | 'medium' | 'high';
   recommendedAction: 'allow' | 'warn' | 'block';
   details?: {
-    emailHistory?: any;
-    deviceHistory?: any;
-    ipHistory?: any;
+    emailHistory?: Record<string, unknown>;
+    deviceHistory?: Record<string, unknown>;
+    ipHistory?: Record<string, unknown>;
   };
 }
 

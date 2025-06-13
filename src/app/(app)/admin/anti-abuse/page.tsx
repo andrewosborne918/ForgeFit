@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface AntiAbuseStats {
   period: string;
@@ -25,11 +25,11 @@ interface AntiAbuseStats {
       ipAddress: string;
       registrations: number;
       emails: string[];
-      lastSeen: any;
+      lastSeen: unknown;
     }>;
     recentDeletions: Array<{
       email: string;
-      deletedAt: any;
+      deletedAt: unknown;
       workoutsUsed: number;
       plan: string;
     }>;
@@ -41,7 +41,7 @@ export default function AntiAbuseDashboard() {
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(7);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/anti-abuse-stats?days=${days}`);
@@ -54,11 +54,11 @@ export default function AntiAbuseDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [days]);
 
   useEffect(() => {
     fetchStats();
-  }, [days]);
+  }, [days, fetchStats]);
 
   if (loading) {
     return (
@@ -199,7 +199,7 @@ export default function AntiAbuseDashboard() {
 
 function TestValidation() {
   const [email, setEmail] = useState('');
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [testing, setTesting] = useState(false);
 
   const testValidation = async () => {
@@ -221,7 +221,7 @@ function TestValidation() {
       
       const data = await response.json();
       setResult(data);
-    } catch (error) {
+    } catch {
       setResult({ error: 'Failed to test validation' });
     } finally {
       setTesting(false);

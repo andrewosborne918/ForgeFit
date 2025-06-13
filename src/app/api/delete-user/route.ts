@@ -4,8 +4,25 @@ import { getAuth } from 'firebase-admin/auth';
 import { getApp } from 'firebase-admin/app';
 import Stripe from 'stripe';
 
+// Define a more specific type for UserData
+interface UserProfileData {
+  plan?: string;
+  workoutsGenerated?: number;
+  // Add any other properties that might exist on profile
+}
+
+interface UserData {
+  email?: string;
+  customerId?: string;
+  subscriptionId?: string;
+  createdAt?: any; // Consider using a more specific type like Timestamp or Date
+  profile?: UserProfileData;
+  // Add any other top-level properties from your user document
+  [key: string]: any; // Keep this for flexibility if not all properties are known
+}
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia',
+  apiVersion: '2025-04-30.basil', // Using the version from the error message
 });
 
 interface DeletionResult {
@@ -64,6 +81,7 @@ export async function POST(request: NextRequest) {
     const adminDB = getAdminDB();
     if (!adminDB) {
       deletionResult.errors.push('Firebase Admin not initialized');
+      // It's important to return here if adminDB is not available.
       return NextResponse.json(deletionResult, { status: 500 });
     }
 
@@ -71,27 +89,29 @@ export async function POST(request: NextRequest) {
 
     // Step 1: Get user data before deletion (for logging and Stripe cleanup)
     console.log('📋 Retrieving user data before deletion...');
-    let userData: Record<string, unknown> | null = null;
+    let userData: UserData | null = null; // Use the UserData interface
     try {
       const userDoc = await adminDB.collection('users').doc(userId).get();
       if (userDoc.exists) {
-        userData = userDoc.data();
-        console.log(`   Found user data: ${userData.email}`);
-        console.log(`   Customer ID: ${userData.customerId}`);
-        console.log(`   Subscription ID: ${userData.subscriptionId}`);
+        userData = userDoc.data() as UserData; // Assert to UserData
+        if (userData) { // Null check for userData
+          console.log(`   Found user data: ${userData.email}`);
+          console.log(`   Customer ID: ${userData.customerId}`);
+          console.log(`   Subscription ID: ${userData.subscriptionId}`);
+        }
       }
     } catch (error) {
       console.warn('Failed to retrieve user data:', error);
-      deletionResult.errors.push(`Failed to retrieve user data: ${error}`);
+      deletionResult.errors.push(`Failed to retrieve user data: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     // Step 2: Delete Stripe data (if exists)
-    if (userData?.customerId) {
+    if (userData && userData.customerId) { // Null check for userData
       console.log('💳 Deleting Stripe customer data...');
       try {
         // Cancel all active subscriptions
         const subscriptions = await stripe.subscriptions.list({
-          customer: userData.customerId,
+          customer: userData.customerId as string, // Ensure customerId is a string
           status: 'active',
         });
 
@@ -102,12 +122,12 @@ export async function POST(request: NextRequest) {
         }
 
         // Delete customer (this removes payment methods and billing info)
-        await stripe.customers.del(userData.customerId);
+        await stripe.customers.del(userData.customerId as string); // Ensure customerId is a string
         deletionResult.deletedData.stripeCustomer = true;
         console.log(`   Deleted Stripe customer: ${userData.customerId}`);
       } catch (error) {
         console.error('Failed to delete Stripe data:', error);
-        deletionResult.errors.push(`Stripe deletion failed: ${error}`);
+        deletionResult.errors.push(`Stripe deletion failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -194,7 +214,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Add email to blacklist to prevent re-registration abuse
-      if (userData?.email) {
+      if (userData && userData.email) { // Null check for userData
         await adminDB.collection('deletedEmails').add({
           email: userData.email.toLowerCase(),
           originalUserId: userId,

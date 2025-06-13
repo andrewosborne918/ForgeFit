@@ -25,11 +25,11 @@ interface AntiAbuseStats {
       ipAddress: string;
       registrations: number;
       emails: string[];
-      lastSeen: unknown;
+      lastSeen: Date | string | null;
     }>;
     recentDeletions: Array<{
       email: string;
-      deletedAt: unknown;
+      deletedAt: Date | string | { seconds: number, nanoseconds: number } | null;
       workoutsUsed: number;
       plan: string;
     }>;

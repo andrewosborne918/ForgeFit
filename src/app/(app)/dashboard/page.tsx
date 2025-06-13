@@ -53,7 +53,6 @@ interface ExerciseItem {
   sets?: string | number;
   reps?: string | number;
   description?: string;
-  [key: string]: unknown;
 }
 
 interface CompletedPlan {
@@ -209,10 +208,10 @@ function DashboardPageContent() {
         const scheduleCol = collection(db, `users/${user.uid}/weeklySchedule`);
         const snapshot = await getDocs(scheduleCol);
         const scheduleArr: Array<DayAssignment | null> = Array(7).fill(null);
-        snapshot.forEach(docSnap => {
+        snapshot.forEach((docSnap: any) => { // Explicitly type docSnap
           const idx = parseInt(docSnap.id, 10);
           if (!isNaN(idx) && idx >= 0 && idx < 7) {
-            scheduleArr[idx] = docSnap.data() as DayAssignment;
+            scheduleArr[idx] = docSnap.data() as DayAssignment; // Consider a more specific type assertion or validation
           }
         });
         setWeeklySchedule(scheduleArr);
@@ -281,10 +280,10 @@ function DashboardPageContent() {
 
         try {
           const querySnapshot = await getDocs(q);
-          const plans = querySnapshot.docs.map(doc => ({
+          const plans = querySnapshot.docs.map((doc: any) => ({ // Explicitly type doc
             id: doc.id,
             ...doc.data()
-          } as CompletedPlan));
+          } as CompletedPlan)); // Consider a more specific type assertion or validation
           setCompletedPlans(plans);
         } catch (error) {
           console.error("Error fetching completed plans:", error);
@@ -446,7 +445,7 @@ interface UserProfile {
   name?: string;
   plan?: 'free' | 'premium';
   workoutsGenerated?: number;
-  [key: string]: unknown;
+  activePlan?: WorkoutPlan | null; // Added to reflect usage
 }
 
   const generatePlan = async (preferences?: GenerationPreferences) => {
@@ -1214,7 +1213,7 @@ interface UserProfile {
                         />
                       </div>
                     ) : (
-                      <div className="w-20 h-20 bg-slate-200 dark:bg-slate-700 flex items-center justify-center rounded-lg flex-shrink-0">
+                      <div className="w-20 h-20 bg-slate-200 dark:bg-slate700 flex items-center justify-center rounded-lg flex-shrink-0">
                         <ImageIcon className="h-10 w-10 text-slate-400 dark:text-slate-500" />
                       </div>
                     )}
@@ -1514,7 +1513,7 @@ interface UserProfile {
                         onClick={() => setIsModalOpen(true)}
                         className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                       >
-                        <Repeat className="h-5 w-5" />
+                        <RefreshCw className="h-5 w-5" />
                       </Button>
                     </div>
                     

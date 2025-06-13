@@ -14,7 +14,9 @@ interface UserProfile {
   equipment?: string[];
   plan?: 'free' | 'premium';
   workoutsGenerated?: number;
-  [key: string]: unknown;
+  name?: string;
+  email?: string;
+  activePlan?: unknown; // Define a proper type for activePlan if possible
 }
 
 interface AppContextType {
@@ -77,7 +79,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         const db = getFirestore(app);
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
-        const profile = docSnap.exists() ? docSnap.data().profile || null : null;
+        const profile = docSnap.exists() ? docSnap.data() as UserProfile || null : null;
 
         setUserProfile(profile);
 

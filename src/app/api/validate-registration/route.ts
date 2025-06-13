@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       reasons: [],
       riskLevel: 'low',
       recommendedAction: 'allow',
-      details: {}
+      details: {} // Initialize details object
     };
 
     // Check 1: Email blacklist (deleted emails)
@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
       result.riskLevel = 'high';
       result.recommendedAction = 'block';
       result.reasons.push(`Email was previously used and deleted on ${emailData.deletedAt?.toDate?.()?.toLocaleDateString()}`);
+      // Ensure details object exists before assigning to its properties
+      if (!result.details) result.details = {}; 
       result.details.emailHistory = {
         deletedAt: emailData.deletedAt,
         workoutsUsed: emailData.workoutsUsed,
@@ -86,6 +88,8 @@ export async function POST(request: NextRequest) {
         d.registeredAt?.toDate?.() > thirtyDaysAgo
       ).length;
 
+      // Ensure details object exists before assigning to its properties
+      if (!result.details) result.details = {}; 
       result.details.deviceHistory = {
         totalRegistrations: registrations,
         recentRegistrations,
@@ -114,6 +118,8 @@ export async function POST(request: NextRequest) {
 
       if (!ipCheck.empty) {
         const ipRegistrations = ipCheck.docs.length;
+        // Ensure details object exists before assigning to its properties
+        if (!result.details) result.details = {}; 
         result.details.ipHistory = {
           registrations: ipRegistrations,
           firstSeen: ipCheck.docs[0].data().firstSeen

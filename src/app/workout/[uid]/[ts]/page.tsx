@@ -25,7 +25,6 @@ interface ExerciseItem {
   sets?: string | number;
   reps?: string | number;
   description?: string;
-  [key: string]: unknown;
 }
 
 interface WorkoutPlan {
@@ -164,17 +163,17 @@ export default function WorkoutDetailPage() {
 
             if (userDocSnap.exists()) {
               const userData = userDocSnap.data();
-              let foundPlan = null;
+              let foundPlan: WorkoutPlan | null = null; // Explicitly type foundPlan
 
               // Check activePlan
               if (userData.activePlan && userData.activePlan.id === ts) {
-                foundPlan = userData.activePlan;
+                foundPlan = userData.activePlan as WorkoutPlan; // Type assertion
               } 
               // If not in activePlan, check weeklySchedule
               else if (userData.weeklySchedule && Array.isArray(userData.weeklySchedule)) {
                 for (const daySchedule of userData.weeklySchedule) {
-                  if (daySchedule && daySchedule.type === 'workout' && daySchedule.workout && daySchedule.workout.id === ts) {
-                    foundPlan = daySchedule.workout;
+                  if (daySchedule && daySchedule.type === 'workout' && daySchedule.workout && (daySchedule.workout as WorkoutPlan).id === ts) {
+                    foundPlan = daySchedule.workout as WorkoutPlan; // Type assertion
                     break;
                   }
                 }
@@ -208,8 +207,8 @@ export default function WorkoutDetailPage() {
             if (!isActive) return;
 
             if (logSnap.exists()) {
-              const workoutData = logSnap.data();
-              setPlan(workoutData); // This triggers Effect 1 to set pageState to "planLoaded"
+              const workoutData = logSnap.data() as WorkoutPlan; // Type assertion
+              setPlan(workoutData); 
               
               // Load completed exercises after plan is set
               const storedCompleted = localStorage.getItem(`completed-${uid}-${ts}`);

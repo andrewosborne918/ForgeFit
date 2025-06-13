@@ -266,14 +266,18 @@ function TestValidation() {
             {result.allowed ? '✅ Registration Allowed' : '❌ Registration Blocked'}
           </div>
           <div className="text-sm mt-1">
-            Risk Level: <span className="font-medium">{result.riskLevel}</span>
+            Risk Level: <span className="font-medium">
+              {typeof result.riskLevel === 'string' || typeof result.riskLevel === 'number'
+                ? result.riskLevel
+                : 'Unknown'}
+            </span>
           </div>
-          {result.reasons && result.reasons.length > 0 && (
+          {result.reasons && Array.isArray(result.reasons) && result.reasons.length > 0 && (
             <div className="text-sm mt-2">
               <strong>Reasons:</strong>
               <ul className="list-disc list-inside ml-2">
-                {result.reasons.map((reason: string, i: number) => (
-                  <li key={i}>{reason}</li>
+                {result.reasons.map((reason: unknown, i: number) => (
+                  <li key={i}>{typeof reason === 'string' ? reason : 'Unknown reason'}</li>
                 ))}
               </ul>
             </div>

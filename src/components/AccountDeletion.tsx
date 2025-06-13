@@ -23,7 +23,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Trash2, AlertTriangle, Shield, CheckCircle, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getAuth, signOut } from "firebase/auth"
@@ -131,8 +130,10 @@ export function AccountDeletion({ userId, userEmail }: AccountDeletionProps) {
         
         // Sign out user
         try {
-          const auth = getAuth(app)
-          await signOut(auth)
+          if (app) {
+            const auth = getAuth(app)
+            await signOut(auth)
+          }
         } catch (signOutError) {
           console.warn("Failed to sign out after deletion:", signOutError)
         }
@@ -205,12 +206,14 @@ export function AccountDeletion({ userId, userEmail }: AccountDeletionProps) {
             </div>
           ) : deletionData ? (
             <div className="space-y-4">
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Warning:</strong> {deletionData.warning}
-                </AlertDescription>
-              </Alert>
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                  <div className="text-sm text-yellow-800">
+                    <strong>Warning:</strong> {deletionData.warning}
+                  </div>
+                </div>
+              </div>
 
               <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 space-y-3">
                 <h4 className="font-semibold text-slate-900 dark:text-white">Account Information</h4>
@@ -240,17 +243,21 @@ export function AccountDeletion({ userId, userEmail }: AccountDeletionProps) {
               </div>
 
               {error && (
-                <Alert className="border-red-200 bg-red-50 text-red-800">
-                  <XCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <XCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                    <div className="text-sm text-red-800">{error}</div>
+                  </div>
+                </div>
               )}
             </div>
           ) : error ? (
-            <Alert className="border-red-200 bg-red-50 text-red-800">
-              <XCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <XCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                <div className="text-sm text-red-800">{error}</div>
+              </div>
+            </div>
           ) : null}
 
           <DialogFooter>
@@ -284,19 +291,23 @@ export function AccountDeletion({ userId, userEmail }: AccountDeletionProps) {
           {deletionResult ? (
             <div className="space-y-4">
               {deletionResult.success ? (
-                <Alert className="border-green-200 bg-green-50 text-green-800">
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Account successfully deleted. You will be redirected to the homepage.
-                  </AlertDescription>
-                </Alert>
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                    <div className="text-sm text-green-800">
+                      Account successfully deleted. You will be redirected to the homepage.
+                    </div>
+                  </div>
+                </div>
               ) : (
-                <Alert className="border-yellow-200 bg-yellow-50 text-yellow-800">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    Deletion partially completed with some errors: {deletionResult.errors.join(', ')}
-                  </AlertDescription>
-                </Alert>
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                    <div className="text-sm text-yellow-800">
+                      Deletion partially completed with some errors: {deletionResult.errors.join(', ')}
+                    </div>
+                  </div>
+                </div>
               )}
               
               <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
@@ -336,10 +347,12 @@ export function AccountDeletion({ userId, userEmail }: AccountDeletionProps) {
               </div>
 
               {error && (
-                <Alert className="border-red-200 bg-red-50 text-red-800">
-                  <XCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <XCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                    <div className="text-sm text-red-800">{error}</div>
+                  </div>
+                </div>
               )}
             </div>
           )}

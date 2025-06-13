@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label"
 // import { Checkbox } from "@/components/ui/checkbox"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"; 
 import Link from 'next/link'; 
-import { Loader2, Edit3, PlusCircle, Coffee, Repeat, Zap, /* CalendarPlus, */ Trash2, ImageIcon, XCircle, Eye, RefreshCw } from "lucide-react"; // Added RefreshCw icon
+import { Loader2, Edit3, PlusCircle, Coffee, Repeat, Zap, CalendarPlus, Trash2, ImageIcon, XCircle, Eye, RefreshCw } from "lucide-react"; // Added RefreshCw icon
 // import { Slider } from "@/components/ui/slider"
 // import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
@@ -137,6 +137,10 @@ function DashboardPageContent() {
 
   // Loading message state
   const [loadingMessage, setLoadingMessage] = useState<string>("");
+
+  // Day assignment modal for workout cards
+  const [isAssignWorkoutModalOpen, setIsAssignWorkoutModalOpen] = useState(false);
+  const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutAssignmentDetails | null>(null);
 
   // const [isAssignToDayModalOpen, setIsAssignToDayModalOpen] = useState(false);
   // const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutAssignmentDetails | null>(null);
@@ -326,17 +330,46 @@ function DashboardPageContent() {
     }));
   };
 
+  // Convert completed plan to workout assignment details
+  const convertCompletedPlanToWorkoutDetails = (completedPlan: CompletedPlan): WorkoutAssignmentDetails => {
+    const planTitle = completedPlan.plan?.plan?.title || completedPlan.plan?.title || "Unnamed Workout";
+    const planDurationValue = completedPlan.plan?.plan?.duration || completedPlan.plan?.duration;
+    const planDuration = planDurationValue 
+      ? (typeof planDurationValue === 'number' ? formatDuration(planDurationValue) : planDurationValue.toString())
+      : "Duration not set";
+    const planImage = completedPlan.image || completedPlan.plan?.imageUrl || completedPlan.plan?.image;
+    
+    return {
+      planId: completedPlan.id,
+      title: planTitle,
+      duration: planDuration,
+      ...(planImage && { imageUrl: planImage }),
+    };
+  };
+
+  // Handle opening the day assignment modal for a workout
+  const handleOpenWorkoutAssignmentModal = (completedPlan: CompletedPlan) => {
+    const workoutDetails = convertCompletedPlanToWorkoutDetails(completedPlan);
+    setWorkoutToAssign(workoutDetails);
+    setIsAssignWorkoutModalOpen(true);
+  };
+
+  // Handle assigning workout to a specific day
+  const handleAssignWorkoutToSpecificDay = async (dayIndex: number) => {
+    if (!workoutToAssign || dayIndex < 0 || dayIndex >= 7) return;
+
+    await assignWorkoutToDay(dayIndex, workoutToAssign);
+    setIsAssignWorkoutModalOpen(false);
+    setWorkoutToAssign(null);
+  };
+
   const formatDuration = (minutes: number): string => {
-    if (minutes < 60) {
-      return `${minutes} minutes`;
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
     }
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    const hourText = hours > 1 ? "hours" : "hour";
-    if (remainingMinutes === 0) {
-      return `${hours} ${hourText}`;
-    }
-    return `${hours} ${hourText}, ${remainingMinutes} minutes`;
+    return `${minutes}m`;
   };
 
   // const getRandomLoadingMessage = () => {
@@ -1013,18 +1046,33 @@ interface UserProfile {
                     )}
                   </div>
                   
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (user?.uid) {
-                        router.push(`/workout/${user.uid}/${p.id}`);
-                      }
-                    }}
-                    className="flex-shrink-0"
-                  >
-                    Start
-                  </Button>
+                  <div className="flex items-center space-x-2 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleOpenWorkoutAssignmentModal(p);
+                      }}
+                      className="text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300"
+                      title="Assign to schedule"
+                    >
+                      <CalendarPlus className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (user?.uid) {
+                          router.push(`/workout/${user.uid}/${p.id}`);
+                        }
+                      }}
+                      className="flex-shrink-0"
+                    >
+                      Start
+                    </Button>
+                  </div>
                 </div>
               </div>
             );
@@ -1394,6 +1442,19 @@ interface UserProfile {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleOpenWorkoutAssignmentModal(p);
+                              }}
+                              className="text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 w-8 h-8"
+                              title="Assign to schedule"
+                            >
+                              <CalendarPlus className="h-4 w-4" />
+                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => setPlanToDelete(p.id)} className="text-destructive hover:text-destructive/80 dark:text-red-500 dark:hover:text-red-400 w-8 h-8">
@@ -1997,6 +2058,79 @@ interface UserProfile {
             >
               Subscribe Now
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Day Assignment Modal for Workout Cards */}
+      <Dialog open={isAssignWorkoutModalOpen} onOpenChange={(isOpen) => {
+        setIsAssignWorkoutModalOpen(isOpen);
+        if (!isOpen) {
+          setWorkoutToAssign(null);
+        }
+      }}>
+        <DialogContent className="bg-white dark:bg-slate-900 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-slate-800 dark:text-slate-100">
+              Assign Workout to Day
+            </DialogTitle>
+            <DialogDescription className="text-slate-600 dark:text-slate-400">
+              {workoutToAssign && `Choose which day to assign "${workoutToAssign.title}" to your weekly schedule.`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="grid grid-cols-1 gap-2">
+              {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((dayName, index) => {
+                const currentAssignment = weeklySchedule[index];
+                const hasAssignment = currentAssignment !== null;
+                
+                return (
+                  <Button
+                    key={index}
+                    variant={hasAssignment ? "outline" : "default"}
+                    onClick={() => handleAssignWorkoutToSpecificDay(index)}
+                    className={`w-full justify-between p-4 h-auto ${
+                      hasAssignment 
+                        ? "border-orange-200 dark:border-orange-800 text-slate-700 dark:text-slate-300" 
+                        : "bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+                    }`}
+                  >
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{dayName}</span>
+                      {hasAssignment && (
+                        <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          {currentAssignment.type === 'workout' 
+                            ? `Workout: ${currentAssignment.workoutDetails?.title || "Unnamed"}` 
+                            : currentAssignment.type === 'rest' 
+                              ? "Rest Day" 
+                              : currentAssignment.type === 'stretch' 
+                                ? "Stretch Day" 
+                                : "Assigned"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center">
+                      {hasAssignment ? (
+                        <span className="text-xs px-2 py-1 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">
+                          Replace
+                        </span>
+                      ) : (
+                        <CalendarPlus className="h-4 w-4" />
+                      )}
+                    </div>
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" className="dark:text-slate-300">
+                Cancel
+              </Button>
+            </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>

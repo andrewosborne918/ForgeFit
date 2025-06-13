@@ -272,7 +272,7 @@ function TestValidation() {
                 : 'Unknown'}
             </span>
           </div>
-          {result.reasons && Array.isArray(result.reasons) && result.reasons.length > 0 && (
+          {Array.isArray(result.reasons) && result.reasons.length > 0 ? (
             <div className="text-sm mt-2">
               <strong>Reasons:</strong>
               <ul className="list-disc list-inside ml-2">
@@ -281,7 +281,7 @@ function TestValidation() {
                 ))}
               </ul>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

@@ -10,10 +10,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: NextRequest) {
+  console.log('🎯 Webhook received request at:', new Date().toISOString());
+  
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
 
+  console.log('📝 Webhook signature present:', !!signature);
+
   if (!signature) {
+    console.log('❌ Missing Stripe signature');
     return NextResponse.json(
       { error: 'Missing Stripe signature' },
       { status: 400 }
@@ -22,11 +27,17 @@ export async function POST(request: NextRequest) {
 
   const adminDB = getAdminDB();
   if (!adminDB) {
+    console.log('❌ Firebase Admin not configured - check environment variables');
+    console.log('   FIREBASE_PROJECT_ID:', !!process.env.FIREBASE_PROJECT_ID);
+    console.log('   FIREBASE_CLIENT_EMAIL:', !!process.env.FIREBASE_CLIENT_EMAIL);
+    console.log('   FIREBASE_PRIVATE_KEY:', !!process.env.FIREBASE_PRIVATE_KEY);
     return NextResponse.json(
       { error: 'Firebase Admin not configured' },
       { status: 500 }
     );
   }
+
+  console.log('✅ Firebase Admin SDK initialized successfully');
 
   let event: Stripe.Event;
 
@@ -64,7 +75,9 @@ export async function POST(request: NextRequest) {
           updatedAt: new Date(),
         });
 
-        console.log(`Subscription created for user ${firebaseUID}`);
+        console.log(`✅ Successfully updated user ${firebaseUID} to premium plan`);
+        console.log(`   Subscription ID: ${subscription.id}`);
+        console.log(`   Customer ID: ${session.customer}`);
         break;
       }
 

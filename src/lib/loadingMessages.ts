@@ -304,4 +304,10 @@ const LOADING_MESSAGES: string[] = [
     "You are the chosen one. The chosen one to do burpees."
 ];
 
+// Helper function to get a random loading message
+export function getRandomLoadingMessage(): string {
+  const randomIndex = Math.floor(Math.random() * LOADING_MESSAGES.length);
+  return LOADING_MESSAGES[randomIndex];
+}
+
 export default LOADING_MESSAGES;

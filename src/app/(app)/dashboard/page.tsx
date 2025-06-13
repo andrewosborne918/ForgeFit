@@ -9,6 +9,7 @@ import { getFirestore, setDoc, doc, collection, query, orderBy, getDocs, deleteD
 import Image from "next/image" 
 import { Button } from "@/components/ui/button" 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog" 
+import { getRandomLoadingMessage } from "@/lib/loadingMessages"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -133,6 +134,9 @@ function DashboardPageContent() {
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [promoCodeError, setPromoCodeError] = useState("");
+
+  // Loading message state
+  const [loadingMessage, setLoadingMessage] = useState<string>("");
 
   // const [isAssignToDayModalOpen, setIsAssignToDayModalOpen] = useState(false);
   // const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutAssignmentDetails | null>(null);
@@ -414,6 +418,7 @@ interface UserProfile {
 
   const generatePlan = async (preferences?: GenerationPreferences) => {
     setGenerating(true)
+    setLoadingMessage(getRandomLoadingMessage()) // Set random loading message
     setIsModalOpen(false)
     
     if (!user) {
@@ -658,6 +663,7 @@ interface UserProfile {
       setAssigningWorkoutToDayIndex(null); 
     } finally {
       setGenerating(false)
+      setLoadingMessage("") // Clear loading message
       // clearInterval(messageInterval); 
     }
   }
@@ -932,7 +938,19 @@ interface UserProfile {
                 )}
                 
                 {isAssigningToThisDay && (
-                  <Loader2 className="animate-spin h-6 w-6 text-orange-500" />
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="animate-spin h-6 w-6 text-orange-500" />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                        Assigning workout...
+                      </span>
+                      {loadingMessage && (
+                        <span className="text-xs text-orange-500 dark:text-orange-300">
+                          {loadingMessage.slice(0, 40)}...
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -1030,7 +1048,20 @@ interface UserProfile {
       </div>
       
       {currentWorkout ? (
-        <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg overflow-hidden">
+        <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg overflow-hidden relative">
+          {/* Loading overlay for current workout generation */}
+          {generating && assigningWorkoutToDayIndex === null && (
+            <div className="absolute inset-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
+              <Loader2 className="animate-spin h-10 w-10 text-orange-500 mb-3" />
+              <p className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2">Generating Your Workout...</p>
+              {loadingMessage && (
+                <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs text-center leading-relaxed px-4">
+                  {loadingMessage}
+                </p>
+              )}
+            </div>
+          )}
+          
           {/* Header with refresh button */}
           <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700">
             <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">Ready to Start</h3>
@@ -1055,7 +1086,7 @@ interface UserProfile {
                   alt={currentWorkout.title || "Current workout"}
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover"
+                  className={`object-cover transition-all duration-300 ${generating && assigningWorkoutToDayIndex === null ? 'blur-sm' : ''}`}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
@@ -1264,6 +1295,11 @@ interface UserProfile {
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 dark:bg-slate-800/70 rounded-lg">
                       <Loader2 className="animate-spin h-8 w-8 text-orange-500" />
                       <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">Assigning...</p>
+                      {loadingMessage && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-center px-2 leading-tight">
+                          {loadingMessage}
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <>
@@ -1394,7 +1430,20 @@ interface UserProfile {
 
             {/* Generate Plan Card or Current Workout Card */}
             <div className="flex-1 min-w-0 flex flex-col">
-              <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg overflow-hidden flex flex-col items-center text-center p-6 md:p-8 h-[540px] justify-between">
+              <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg overflow-hidden flex flex-col items-center text-center p-6 md:p-8 h-[540px] justify-between relative">
+                {/* Loading overlay for current workout generation */}
+                {generating && assigningWorkoutToDayIndex === null && (
+                  <div className="absolute inset-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
+                    <Loader2 className="animate-spin h-12 w-12 text-orange-500 mb-4" />
+                    <p className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">Generating Your Workout...</p>
+                    {loadingMessage && (
+                      <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs text-center leading-relaxed">
+                        {loadingMessage}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
                 {currentWorkout ? (
                   <>
                     <div className="w-full flex justify-end mb-2">
@@ -1415,7 +1464,7 @@ interface UserProfile {
                           alt={currentWorkout.title || "Current workout"}
                           fill
                           sizes="220px"
-                          className="object-cover"
+                          className={`object-cover transition-all duration-300 ${generating && assigningWorkoutToDayIndex === null ? 'blur-sm' : ''}`}
                         />
                       </div>
                     ) : (
@@ -1650,6 +1699,71 @@ interface UserProfile {
               </Button>
             </DialogFooter>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Loading Modal for General Workout Generation */}
+      <Dialog open={generating && assigningWorkoutToDayIndex === null && !currentWorkout} onOpenChange={(isOpen) => {
+        if (!isOpen && generating) {
+          // Allow closing during generation (user can exit loading)
+          setGenerating(false);
+          setLoadingMessage("");
+        }
+      }}>
+        <DialogContent className="w-[95vw] max-w-md bg-white dark:bg-slate-900 rounded-lg p-6">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">
+              Generating Your Perfect Workout
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center py-6">
+            {/* Workout image placeholder with blur effect */}
+            <div className="w-48 h-48 relative mb-6 rounded-lg overflow-hidden">
+              {generatePlanCardImage ? (
+                <Image
+                  src={generatePlanCardImage}
+                  alt="Your new workout is being generated"
+                  fill
+                  sizes="192px"
+                  className="object-cover blur-sm"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
+                  <ImageIcon className="h-16 w-16 text-slate-400 dark:text-slate-500" />
+                </div>
+              )}
+              
+              {/* Loading spinner overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                <Loader2 className="animate-spin h-12 w-12 text-orange-500" />
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <p className="text-lg font-medium text-slate-700 dark:text-slate-200 mb-3">
+                Crafting your personalized workout...
+              </p>
+              {loadingMessage && (
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-xs">
+                  {loadingMessage}
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setGenerating(false);
+                setLoadingMessage("");
+              }}
+              className="w-full dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700"
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

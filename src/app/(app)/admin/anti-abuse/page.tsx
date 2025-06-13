@@ -19,7 +19,7 @@ interface AntiAbuseStats {
       fingerprint: string;
       registrations: number;
       emails: string[];
-      lastSeen: any;
+      lastSeen: Date | string | null;
     }>;
     topRepeatIPs: Array<{
       ipAddress: string;

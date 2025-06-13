@@ -169,6 +169,8 @@ export default function ProfilePage() {
           gender,
           goals,
           experience,
+          plan: 'free',           // Initialize with free plan
+          workoutsGenerated: 0,   // Initialize workout counter
         },
       }, { merge: true })
 

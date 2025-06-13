@@ -91,6 +91,10 @@ const handleSignUp = async () => {
       uid: user.uid,
       email: user.email,
       createdAt: serverTimestamp(),
+      profile: {
+        plan: 'free',           // Initialize with free plan
+        workoutsGenerated: 0,   // Initialize workout counter
+      },
     })
 
     router.push("/profile")
@@ -123,6 +127,10 @@ const handleGoogle = async () => {
       uid: user.uid,
       email: user.email,
       createdAt: serverTimestamp(),
+      profile: {
+        plan: 'free',           // Initialize with free plan
+        workoutsGenerated: 0,   // Initialize workout counter
+      },
     }, { merge: true }) // Use merge to avoid overwriting existing data
     
     router.push("/profile")

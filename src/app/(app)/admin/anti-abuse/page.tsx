@@ -174,7 +174,16 @@ export default function AntiAbuseDashboard() {
                     {deletion.workoutsUsed} workouts used • {deletion.plan} plan
                   </div>
                   <div className="text-xs text-slate-500">
-                    Deleted: {new Date(deletion.deletedAt?.seconds * 1000 || deletion.deletedAt).toLocaleDateString()}
+                    {(() => {
+                      const deletedAt = deletion.deletedAt as { seconds: number } | string | number | Date | null | undefined;
+                      
+                      const date = 
+                        deletedAt && typeof deletedAt === 'object' && 'seconds' in deletedAt
+                          ? new Date((deletedAt as { seconds: number }).seconds * 1000)
+                          : new Date(deletedAt as string | number | Date);
+                      
+                      return `Deleted: ${date.toLocaleDateString()}`;
+                    })()}
                   </div>
                 </div>
               ))}

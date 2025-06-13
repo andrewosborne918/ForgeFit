@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { BackgroundGrid } from "@/components/BackgroundGrid"
 import { Logo } from "@/components/Logo"
+import { DeviceFingerprint } from "@/utils/deviceFingerprint"
 
 // Prevent static generation for this page
 export const dynamic = 'force-dynamic'
@@ -79,6 +80,36 @@ const handleSignUp = async () => {
 
   setLoading(true)
   try {
+    // Generate device fingerprint for anti-abuse validation
+    const deviceFingerprint = await DeviceFingerprint.generateFingerprint();
+    
+    // Validate registration against anti-abuse rules
+    const validationResponse = await fetch('/api/validate-registration', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email.toLowerCase(),
+        deviceFingerprint,
+        ipAddress: undefined // Could add IP detection if needed
+      })
+    });
+
+    if (validationResponse.ok) {
+      const validation = await validationResponse.json();
+      
+      // Block if high risk
+      if (!validation.allowed && validation.riskLevel === 'high') {
+        setError(`Registration blocked: ${validation.reasons.join(', ')}`);
+        setLoading(false);
+        return;
+      }
+      
+      // Warn but allow if medium risk
+      if (validation.riskLevel === 'medium') {
+        console.warn('🟡 Medium risk registration:', validation.reasons);
+      }
+    }
+
     if (!app) {
       throw new Error("Firebase app not initialized");
     }
@@ -97,6 +128,9 @@ const handleSignUp = async () => {
       },
     })
 
+    // Record device registration for tracking
+    await DeviceFingerprint.recordDeviceRegistration(deviceFingerprint, user.uid, user.email || '');
+
     router.push("/profile")
   } catch (err: unknown) {
     const error = err as FirebaseAuthError
@@ -114,12 +148,45 @@ const handleGoogle = async () => {
     if (!app) {
       throw new Error("Firebase app not initialized");
     }
+
+    // Generate device fingerprint for anti-abuse validation
+    const deviceFingerprint = await DeviceFingerprint.generateFingerprint();
+    
+    // For Google OAuth, we'll validate after getting user info
     const provider = new GoogleAuthProvider()
     provider.addScope('email')
     provider.addScope('profile')
     
     const userCred = await signInWithPopup(auth, provider)
     const user = userCred.user
+
+    // Validate registration against anti-abuse rules
+    const validationResponse = await fetch('/api/validate-registration', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: user.email?.toLowerCase() || '',
+        deviceFingerprint,
+        ipAddress: undefined
+      })
+    });
+
+    if (validationResponse.ok) {
+      const validation = await validationResponse.json();
+      
+      // Block if high risk - sign out and block
+      if (!validation.allowed && validation.riskLevel === 'high') {
+        await auth.signOut();
+        setError(`Registration blocked: ${validation.reasons.join(', ')}`);
+        setLoading(false);
+        return;
+      }
+      
+      // Warn but allow if medium risk
+      if (validation.riskLevel === 'medium') {
+        console.warn('🟡 Medium risk Google registration:', validation.reasons);
+      }
+    }
 
     // Save to Firestore (merge with existing data if any)
     const db = getFirestore(app)
@@ -132,9 +199,13 @@ const handleGoogle = async () => {
         workoutsGenerated: 0,   // Initialize workout counter
       },
     }, { merge: true }) // Use merge to avoid overwriting existing data
+
+    // Record device registration for tracking
+    await DeviceFingerprint.recordDeviceRegistration(deviceFingerprint, user.uid, user.email || '');
     
     router.push("/profile")
   } catch (err: unknown) {
+    console.error("❌ Google signin error:", err)
     const error = err as FirebaseAuthError
     setError(getAuthErrorMessage(error))
   } finally {

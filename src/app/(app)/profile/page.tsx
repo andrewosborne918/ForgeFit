@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { BackgroundGrid } from "@/components/BackgroundGrid"
 import { Logo } from "@/components/Logo"
+import { AccountDeletion } from "@/components/AccountDeletion"
 import { CreditCard, Crown, Calendar, ExternalLink, Mail, Lock } from "lucide-react"
 
 export default function ProfilePage() {
@@ -370,6 +371,22 @@ export default function ProfilePage() {
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">
                 A password reset link will be sent to your email address
               </p>
+            </div>
+            
+            {/* Account Deletion Section */}
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-600">
+              <div className="mb-3">
+                <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-1">Danger Zone</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Permanently delete your account and all associated data
+                </p>
+              </div>
+              {user && (
+                <AccountDeletion 
+                  userId={user.uid} 
+                  userEmail={user.email || ''} 
+                />
+              )}
             </div>
           </div>
         </div>

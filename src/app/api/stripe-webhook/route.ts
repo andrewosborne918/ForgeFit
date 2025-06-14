@@ -64,12 +64,13 @@ export async function POST(request: NextRequest) {
 
         // Get the subscription details
         const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+        const subscriptionData = subscription as unknown as { current_period_end: number };
         
         // Update user in Firestore with new profile structure
         await adminDB.collection('users').doc(firebaseUID).update({
           'profile.plan': 'premium',
           subscriptionId: subscription.id,
-          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+          currentPeriodEnd: new Date(subscriptionData.current_period_end * 1000),
           customerId: session.customer,
           updatedAt: new Date(),
         });
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
+        const subscriptionData = subscription as unknown as { current_period_end: number };
         const customerId = subscription.customer as string;
 
         // Find user by customer ID
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
           const userDoc = usersQuery.docs[0];
           await userDoc.ref.update({
             'profile.plan': subscription.status === 'active' ? 'premium' : 'free',
-            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+            currentPeriodEnd: new Date(subscriptionData.current_period_end * 1000),
             updatedAt: new Date(),
           });
 

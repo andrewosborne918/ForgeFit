@@ -15,10 +15,10 @@ interface UserData {
   email?: string;
   customerId?: string;
   subscriptionId?: string;
-  createdAt?: any; // Consider using a more specific type like Timestamp or Date
+  createdAt?: unknown; // Using unknown instead of any for better type safety
   profile?: UserProfileData;
   // Add any other top-level properties from your user document
-  [key: string]: any; // Keep this for flexibility if not all properties are known
+  [key: string]: unknown; // Using unknown instead of any for better type safety
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {

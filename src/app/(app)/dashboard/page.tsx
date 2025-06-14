@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, Suspense } from 'react';
 import { useAppContext } from '@/context/AppContext'; // Changed useAuth to useAppContext
 import { useRouter, useSearchParams } from 'next/navigation';
 import { app, isFirebaseConfigured } from '@/lib/firebase'; // Import app and isFirebaseConfigured
-import { getFirestore, setDoc, doc, collection, query, orderBy, getDocs, deleteDoc, getDoc, writeBatch } from 'firebase/firestore'; // Import firestore functions
+import { getFirestore, setDoc, doc, collection, query, orderBy, getDocs, deleteDoc, getDoc, writeBatch, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore'; // Import firestore functions
 // import LOADING_MESSAGES from "@/lib/loadingMessages" 
 import Image from "next/image" 
 import { Button } from "@/components/ui/button" 
@@ -208,7 +208,7 @@ function DashboardPageContent() {
         const scheduleCol = collection(db, `users/${user.uid}/weeklySchedule`);
         const snapshot = await getDocs(scheduleCol);
         const scheduleArr: Array<DayAssignment | null> = Array(7).fill(null);
-        snapshot.forEach((docSnap: any) => { // Explicitly type docSnap
+        snapshot.forEach((docSnap: QueryDocumentSnapshot<DocumentData>) => { // Explicitly type docSnap
           const idx = parseInt(docSnap.id, 10);
           if (!isNaN(idx) && idx >= 0 && idx < 7) {
             scheduleArr[idx] = docSnap.data() as DayAssignment; // Consider a more specific type assertion or validation
@@ -280,7 +280,7 @@ function DashboardPageContent() {
 
         try {
           const querySnapshot = await getDocs(q);
-          const plans = querySnapshot.docs.map((doc: any) => ({ // Explicitly type doc
+          const plans = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({ // Explicitly type doc
             id: doc.id,
             ...doc.data()
           } as CompletedPlan)); // Consider a more specific type assertion or validation

@@ -7,8 +7,7 @@ import { getApp } from 'firebase-admin/app';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get user email from authorization header or query params
-    const authorization = request.headers.get('authorization');
+    // Get user email from query params
     const { searchParams } = new URL(request.url);
     const userEmail = searchParams.get('adminEmail');
     
@@ -147,7 +146,7 @@ export async function POST(request: NextRequest) {
         });
 
       case 'updateProfile':
-        const profileUpdates: any = {};
+        const profileUpdates: Record<string, unknown> = {};
         if (updateData.plan) profileUpdates['profile.plan'] = updateData.plan;
         if (updateData.workoutsGenerated !== undefined) {
           profileUpdates['profile.workoutsGenerated'] = updateData.workoutsGenerated;

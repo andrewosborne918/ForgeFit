@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { isAdminEmail } from '@/lib/admin-auth';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Key, Edit, Search, RefreshCw } from 'lucide-react';
+import { Trash2, Key, Search, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface User {
@@ -61,7 +61,7 @@ export default function AdminUsersPage() {
   }, [user]);
 
   // Fetch users
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (!user?.email) return;
     
     setLoading(true);
@@ -87,13 +87,13 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.email, filters]);
 
   useEffect(() => {
     if (user && user.email && isAdminEmail(user.email)) {
       fetchUsers();
     }
-  }, [user, filters]);
+  }, [user, filters, fetchUsers]);
 
   // Update subscription
   const updateSubscription = async (userId: string, plan: string) => {

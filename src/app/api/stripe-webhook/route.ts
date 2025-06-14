@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         await adminDB.collection('users').doc(firebaseUID).update({
           'profile.plan': 'premium',
           subscriptionId: subscription.id,
-          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000), // Cast to any
+          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           customerId: session.customer,
           updatedAt: new Date(),
         });
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
           const userDoc = usersQuery.docs[0];
           await userDoc.ref.update({
             'profile.plan': subscription.status === 'active' ? 'premium' : 'free',
-            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000), // Cast to any
+            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
             updatedAt: new Date(),
           });
 

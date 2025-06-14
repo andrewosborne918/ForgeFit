@@ -6,6 +6,8 @@ import { useState } from "react";
 import { Menu, X, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle"; // Import ThemeToggle
 import { Button } from "@/components/ui/button"; // Import Button
+import { useAppContext } from "@/context/AppContext";
+import { isAdminEmail } from "@/lib/admin-auth";
 
 const links = [
 	{ href: "/dashboard", label: "Workouts" },
@@ -14,7 +16,16 @@ const links = [
 ];
 
 export function Header() {
+	const { user } = useAppContext();
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+	// Check if current user is admin
+	const isAdmin = user?.email && isAdminEmail(user.email);
+
+	// Add admin link if user is admin
+	const navigationLinks = isAdmin 
+		? [...links, { href: "/admin/users", label: "Admin" }]
+		: links;
 
 	const toggleMobileMenu = () => {
 		setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -45,12 +56,13 @@ export function Header() {
 				{/* Desktop Menu & Theme Toggle */}
 				<div className="hidden items-center gap-4 md:flex">
 					<nav className="flex gap-4">
-						{links.map((link) => (
+						{navigationLinks.map((link) => (
 							<Link
 								key={link.href}
 								href={link.href}
 								className={cn(
-									"text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+									"text-sm font-medium text-muted-foreground hover:text-primary transition-colors",
+									link.label === "Admin" ? "text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300" : ""
 								)}
 							>
 								{link.label}
@@ -90,11 +102,16 @@ export function Header() {
 			{isMobileMenuOpen && (
 				<nav className="md:hidden bg-white dark:bg-slate-900 py-2 border-t dark:border-slate-700">
 					<ul className="flex flex-col items-center space-y-2">
-						{links.map((link) => (
+						{navigationLinks.map((link) => (
 							<li key={link.href}>
 								<Link
 									href={link.href}
-									className="block w-full px-4 py-2 text-center text-sm font-medium text-muted-foreground hover:text-primary dark:hover:text-orange-400 transition-colors"
+									className={cn(
+										"block w-full px-4 py-2 text-center text-sm font-medium transition-colors",
+										link.label === "Admin" 
+											? "text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+											: "text-muted-foreground hover:text-primary dark:hover:text-orange-400"
+									)}
 									onClick={toggleMobileMenu} // Close menu on link click
 								>
 									{link.label}

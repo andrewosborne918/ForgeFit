@@ -114,10 +114,6 @@
 @layer base {
   * {
     border-color: var(--color-border, #e5e7eb);
-    outline-color: var(--color-ring, #a5b4fc);
-    outline-width: 2px;
-    outline-style: solid;
-    outline-offset: 0.5px;
   }
   body {
     background-color: var(--color-background);

@@ -499,7 +499,7 @@ interface UserProfile {
       const data = await res.json()
       let raw = data?.text || ""
       
-      // Simple cleaning - just remove markdown code blocks if present
+      // Enhanced mobile-friendly JSON cleaning
       raw = raw.trim();
       
       // Remove markdown code blocks
@@ -515,10 +515,21 @@ interface UserProfile {
       
       raw = raw.trim(); 
 
-      // Basic cleanup - only fix trailing commas which are common in AI responses
-      raw = raw.replace(/,\s*([}\]])/g, '$1');
+      // Enhanced cleanup for mobile compatibility
+      raw = raw.replace(/,\s*([}\]])/g, '$1'); // Remove trailing commas
+      raw = raw.replace(/[\u2018\u2019]/g, "'"); // Replace smart quotes with regular quotes
+      raw = raw.replace(/[\u201C\u201D]/g, '"'); // Replace smart double quotes
+      raw = raw.replace(/\u2013|\u2014/g, '-'); // Replace em/en dashes
+      raw = raw.replace(/\u00A0/g, ' '); // Replace non-breaking spaces
+      raw = raw.replace(/[\r\n\t]/g, ' '); // Replace line breaks and tabs with spaces
+      raw = raw.replace(/\s+/g, ' '); // Collapse multiple spaces
 
       console.log("Raw JSON from AI:", raw);
+      console.log("Mobile/Device info:", {
+        userAgent: navigator.userAgent,
+        isMobile: /Mobi|Android/i.test(navigator.userAgent),
+        jsonLength: raw.length
+      });
 
       try {
         const json = JSON.parse(raw);
@@ -685,9 +696,207 @@ interface UserProfile {
         }));
       } catch (parseError: unknown) {
         console.error("Failed to parse cleaned JSON:", parseError);
-        console.error("Problematic raw string:", raw); // Log the string that caused the error
-        alert("Failed to generate workout plan due to parsing error. Please check console for details.");
-        setAssigningWorkoutToDayIndex(null);
+        console.error("Problematic raw string:", raw);
+        console.error("Mobile debug info:", {
+          userAgent: navigator.userAgent,
+          isMobile: /Mobi|Android/i.test(navigator.userAgent),
+          jsonLength: raw.length,
+          firstChars: raw.substring(0, 100),
+          lastChars: raw.substring(raw.length - 100),
+          errorType: parseError instanceof Error ? parseError.name : 'Unknown',
+          errorMessage: parseError instanceof Error ? parseError.message : 'Unknown error'
+        });
+        
+        // Try one more time with even more aggressive cleaning for mobile
+        try {
+          let mobileCleanedRaw = raw;
+          // Remove any invisible characters
+          mobileCleanedRaw = mobileCleanedRaw.replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ');
+          // Ensure proper JSON structure
+          if (!mobileCleanedRaw.startsWith('{')) {
+            const firstBrace = mobileCleanedRaw.indexOf('{');
+            if (firstBrace !== -1) {
+              mobileCleanedRaw = mobileCleanedRaw.substring(firstBrace);
+            }
+          }
+          if (!mobileCleanedRaw.endsWith('}')) {
+            const lastBrace = mobileCleanedRaw.lastIndexOf('}');
+            if (lastBrace !== -1) {
+              mobileCleanedRaw = mobileCleanedRaw.substring(0, lastBrace + 1);
+            }
+          }
+          
+          console.log("Attempting mobile-optimized parse:", mobileCleanedRaw.substring(0, 200));
+          const mobileJson = JSON.parse(mobileCleanedRaw);
+          console.log("✅ Mobile-optimized parse successful!");
+          
+          // Continue with the successfully parsed JSON
+          const json = mobileJson;
+          
+          // ... continue with existing logic after successful parse
+          console.log("Parsed JSON object from AI:", JSON.stringify(json, null, 2));
+
+          // Ensure json.duration is a number for assignment logic
+          let numericDuration: number | undefined = undefined;
+          if (typeof json.duration === 'number') {
+            numericDuration = json.duration;
+          } else if (typeof json.duration === 'string') {
+            const parsed = parseInt(json.duration, 10);
+            if (!isNaN(parsed)) {
+              numericDuration = parsed;
+              console.log(`Converted string duration "${json.duration}" to number ${numericDuration}`);
+            } else {
+              console.warn(`Could not parse string duration "${json.duration}" to a number.`);
+            }
+          } else if (json.duration) {
+              console.warn(`json.duration is neither a string nor a number. Type: ${typeof json.duration}, Value: ${json.duration}`);
+          }
+
+          let imageUrlToUse = generatePlanCardImage;
+
+          if (!imageUrlToUse && userProfile?.gender) {
+            console.warn("generatePlanCardImage was not set for the new plan, fetching a new one as fallback.");
+            imageUrlToUse = getNextWorkoutImage(userProfile.gender);
+          }
+
+          if (imageUrlToUse) {
+            json.imageUrl = imageUrlToUse;
+          }
+
+          if (!json.id) {
+            json.id = `generated-${Date.now()}`;
+          }
+
+          // Structure the plan data to match workout detail page expectations
+          const goalString = Array.isArray(userProfile?.goals) 
+            ? userProfile.goals.join(", ") 
+            : (typeof userProfile?.goals === 'string' ? userProfile.goals : "General Fitness");
+
+          const wrappedPlan = { 
+            id: json.id,
+            title: json.title,
+            ...(json.imageUrl && { image: json.imageUrl }),
+            plan: {
+              title: json.title,
+              goal: goalString,
+              duration: json.duration,
+              notes: json.notes || "",
+              workout: json.workout
+            }
+          };
+          setCurrentWorkout(wrappedPlan);
+          localStorage.setItem("activeWorkoutPlan", JSON.stringify(wrappedPlan));
+
+          if (user) {
+            const cleanWrappedPlan = {
+              id: wrappedPlan.id,
+              title: wrappedPlan.title,
+              ...(wrappedPlan.image && { image: wrappedPlan.image }),
+              plan: {
+                ...wrappedPlan.plan,
+                goal: goalString,
+                notes: wrappedPlan.plan.notes || ""
+              }
+            };
+            await setDoc(doc(db, "users", user.uid), { activePlan: cleanWrappedPlan }, { merge: true });
+            
+            if (json.id) {
+              const logRef = doc(db, `users/${user.uid}/logs/${json.id}`);
+              await setDoc(logRef, {
+                id: wrappedPlan.id,
+                title: wrappedPlan.title,
+                ...(wrappedPlan.image && { image: wrappedPlan.image }),
+                plan: {
+                  ...wrappedPlan.plan,
+                  goal: goalString,
+                  notes: wrappedPlan.plan.notes || ""
+                },
+                createdAt: new Date().toISOString(),
+                timestamp: json.id.startsWith('generated-') ? Number(json.id.replace('generated-', '')) : Date.now(),
+              });
+              
+              const newCompletedPlan: CompletedPlan = {
+                id: json.id,
+                plan: wrappedPlan,
+                ...(json.imageUrl && { image: json.imageUrl }),
+                timestamp: json.id.startsWith('generated-') ? Number(json.id.replace('generated-', '')) : Date.now(),
+                createdAt: new Date().toISOString(),
+              };
+              setCompletedPlans(prevPlans => [newCompletedPlan, ...prevPlans]);
+            }
+          }
+
+          if (setUserProfile && userProfile) {
+            setUserProfile({ ...userProfile, activePlan: wrappedPlan });
+          }
+
+          if (assigningWorkoutToDayIndex !== null) { 
+            if (json && json.title && typeof numericDuration === 'number') { 
+              const workoutDetails: WorkoutAssignmentDetails = {
+                planId: json.id || `generated-${Date.now()}`,
+                title: json.title,
+                duration: formatDuration(numericDuration),
+                ...(json.imageUrl && { imageUrl: json.imageUrl }),
+              };
+              const updatedSchedule = [...weeklySchedule];
+              updatedSchedule[assigningWorkoutToDayIndex] = { 
+                type: 'workout', 
+                workoutDetails, 
+                workout: {
+                  ...wrappedPlan,
+                  plan: {
+                    ...wrappedPlan.plan,
+                    goal: goalString,
+                    notes: wrappedPlan.plan.notes || ""
+                  }
+                }
+              };
+              setWeeklySchedule(updatedSchedule);
+              await updateDayAssignmentInFirestore(assigningWorkoutToDayIndex, { 
+                type: 'workout', 
+                workoutDetails, 
+                workout: {
+                  ...wrappedPlan,
+                  plan: {
+                    ...wrappedPlan.plan,
+                    goal: goalString,
+                    notes: wrappedPlan.plan.notes || ""
+                  }
+                }
+              });
+            } else {
+              console.warn(`Generated plan for day ${assigningWorkoutToDayIndex} was empty or invalid. Details - Title: ${json?.title}, Parsed Numeric Duration: ${numericDuration}, Original Duration Type: ${typeof json?.duration}, Original Duration Value: ${json?.duration}. No assignment made to the schedule.`);
+            }
+            setAssigningWorkoutToDayIndex(null);
+          }
+
+          if (preferences) {
+            const equipmentPrefsToSave = {
+              selectedEquipment: preferences.equipment || [],
+              otherEquipment: preferences.otherEquipment || ""
+            };
+            localStorage.setItem("lastUsedEquipmentPrefs", JSON.stringify(equipmentPrefsToSave));
+          }
+
+          if (userProfile?.gender) {
+            setGeneratePlanCardImage(getNextWorkoutImage(userProfile.gender));
+          }
+          
+          localStorage.setItem('lastWorkoutGenerated', Date.now().toString());
+          window.dispatchEvent(new CustomEvent('workoutGenerated', { 
+            detail: { userId: user.uid, timestamp: Date.now() } 
+          }));
+          
+        } catch (mobileFallbackError) {
+          console.error("Mobile fallback parsing also failed:", mobileFallbackError);
+          alert(`Failed to generate workout plan due to parsing error on mobile device. 
+
+Device: ${/Mobi|Android/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop'}
+Error: ${parseError instanceof Error ? parseError.message : 'Unknown'}
+
+Please try again or contact support if the issue persists.`);
+          setAssigningWorkoutToDayIndex(null);
+        }
       }
     } catch (err) {
       alert("Failed to generate workout plan. Please try again.")

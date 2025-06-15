@@ -126,9 +126,58 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
     console.log("Gemini API call successful");
     
     const response = await result.response;
-    const text = await response.text();
+    let text = await response.text();
     
     console.log("Generated text:", text.substring(0, 200) + "...");
+    
+    // Sanitize the response for mobile compatibility
+    try {
+      // Clean the response to ensure it's valid JSON for all devices
+      text = text.trim();
+      
+      // Remove markdown code blocks if present
+      if (text.startsWith('```json')) {
+        text = text.replace(/^```json\s*/, '');
+      }
+      if (text.startsWith('```')) {
+        text = text.replace(/^```\s*/, '');
+      }
+      if (text.endsWith('```')) {
+        text = text.replace(/\s*```$/, '');
+      }
+      
+      text = text.trim();
+      
+      // Mobile-specific sanitization
+      text = text.replace(/[\u2018\u2019]/g, "'"); // Replace smart quotes
+      text = text.replace(/[\u201C\u201D]/g, '"'); // Replace smart double quotes
+      text = text.replace(/\u2013|\u2014/g, '-'); // Replace em/en dashes
+      text = text.replace(/\u00A0/g, ' '); // Replace non-breaking spaces
+      text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, ' '); // Remove control characters
+      text = text.replace(/,\s*([}\]])/g, '$1'); // Remove trailing commas
+      
+      // Validate JSON before sending
+      const testParse = JSON.parse(text);
+      console.log("✅ Server-side JSON validation successful");
+      
+      // Ensure required fields exist
+      if (!testParse.title || !testParse.workout) {
+        throw new Error("Missing required fields in generated workout");
+      }
+      
+    } catch (sanitizeError) {
+      console.error("Error sanitizing JSON response:", sanitizeError);
+      console.error("Raw AI response that failed sanitization:", text);
+      
+      // Fallback: extract JSON from the response more aggressively
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        text = jsonMatch[0];
+        console.log("Extracted JSON using regex fallback");
+      } else {
+        throw new Error("Unable to extract valid JSON from AI response");
+      }
+    }
     
     // Increment workout count for the user
     try {

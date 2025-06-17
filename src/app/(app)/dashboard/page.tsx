@@ -701,6 +701,7 @@ interface UserProfile {
     }
   }
 
+  // Function to update a day's assignment in Firestore
   // const handleViewAndStartActivePlan = async () => {
   //   if (!user || !plan) {
   //     console.warn("User or active plan not available for handleViewAndStartActivePlan.")

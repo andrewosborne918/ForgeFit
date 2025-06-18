@@ -16,8 +16,7 @@ import { Label } from "@/components/ui/label"
 // import { Checkbox } from "@/components/ui/checkbox"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"; 
 import Link from 'next/link'; 
-import { Bed, CalendarPlus, Coffee, Edit3, Eye, ImageIcon, Loader2, Pencil, PlusCircle, RefreshCw, Repeat, StretchHorizontal, Trash2, XCircle, Zap } from "lucide-react"; // Added RefreshCw icon
-import { Pencil } from "lucide-react";
+import { Bed, CalendarPlus, Coffee, Edit3, Eye, ImageIcon, Loader2, Pencil, PlusCircle, RefreshCw, Repeat, StretchHorizontal, Trash2, XCircle, Zap } from "lucide-react";
 
 const IMAGE_POOL_SIZE = 35
 
@@ -31,6 +30,7 @@ interface WorkoutAssignmentDetails {
 interface WorkoutPlan {
   id?: string;
   title?: string;
+  title?: string;
   duration?: string | number;
   imageUrl?: string;
   image?: string; // Support both image and imageUrl for backward compatibility
@@ -40,324 +40,324 @@ interface WorkoutPlan {
     duration?: string | number;
     notes?: string;
     workout?: {
-      warmup?: ExerciseItem[];
       mainWorkout?: ExerciseItem[];
-      cooldown?: ExerciseItem[];
-    };
-  };
+      cooldown?: ExerciseItem[];[];
+    };cooldown?: ExerciseItem[];
+  };};
+} };
 }
-
 interface ExerciseItem {
-  exercise?: string;
+  exercise?: string;em {
   sets?: string | number;
   reps?: string | number;
-  description?: string;
+  description?: string;r;
   [key: string]: unknown;
+} [key: string]: unknown;
 }
-
 interface CompletedPlan {
-  id: string;
+  id: string;pletedPlan {
   plan?: WorkoutPlan;
-  image?: string;
+  image?: string;lan;
   timestamp?: number;
   createdAt?: string;
+} createdAt?: string;
 }
-
 interface DayAssignment {
   type: 'workout' | 'rest' | 'stretch' | null;
-  workoutDetails?: WorkoutAssignmentDetails;
+  workoutDetails?: WorkoutAssignmentDetails;l;
   workout?: WorkoutPlan; // Use proper type for the full plan object
+} workout?: WorkoutPlan; // Use proper type for the full plan object
 }
-
 // const DAYS_OF_WEEK_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS_OF_WEEK_ABBREVIATED = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];", "Friday", "Saturday"];
 const DAYS_OF_WEEK_ABBREVIATED = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 
 function getNextWorkoutImage(gender: string): string {
   const folder = gender === "female" ? "females" : "males"
   const prefix = gender === "female" ? "f_workout_" : "m_workout_"
-  const key = `usedImages_${folder}`
+  const key = `usedImages_${folder}` ? "f_workout_" : "m_workout_"
   let used = JSON.parse(localStorage.getItem(key) || "[]")
-
+  let used = JSON.parse(localStorage.getItem(key) || "[]")
   if (used.length >= IMAGE_POOL_SIZE) used = []
-
+  if (used.length >= IMAGE_POOL_SIZE) used = []
   const available = [...Array(IMAGE_POOL_SIZE).keys()].filter(i => !used.includes(i))
-  const nextIndex = available[Math.floor(Math.random() * available.length)]
-  used.push(nextIndex)
+  const nextIndex = available[Math.floor(Math.random() * available.length)]cludes(i))
+  used.push(nextIndex)ailable[Math.floor(Math.random() * available.length)]
   localStorage.setItem(key, JSON.stringify(used))
-
+  localStorage.setItem(key, JSON.stringify(used))
   const filename = `${prefix}${nextIndex + 1}.jpg`
-  return `/images/${folder}/${filename}`
+  return `/images/${folder}/${filename}` + 1}.jpg`
+} return `/images/${folder}/${filename}`
 }
-
 function DashboardPageContent() {
   const { user, userProfile, setUserProfile, loading: authLoading } = useAppContext();
-  const router = useRouter();
+  const router = useRouter();setUserProfile, loading: authLoading } = useAppContext();
   const searchParams = useSearchParams();
-  
+  const searchParams = useSearchParams();
   // All React hooks must be called at the top level, before any early returns
   const [isModalOpen, setIsModalOpen] = useState(false); // This state controls the main generation modal
-  // const [plan, setPlan] = useState<WorkoutPlan | null>(null) 
+  // const [plan, setPlan] = useState<WorkoutPlan | null>(null)  state controls the main generation modal
   // const [planImage, setPlanImage] = useState<string | null>(null)
-  const [generating, setGenerating] = useState(false)
+  const [generating, setGenerating] = useState(false)g | null>(null)
   const [completedPlans, setCompletedPlans] = useState<CompletedPlan[]>([]) 
   // const [loadingCompletedPlans, setLoadingCompletedPlans] = useState(true)
-  const [planToDelete, setPlanToDelete] = useState<string | null>(null)
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null)(true)
   // const [currentLoadingMessage, setCurrentLoadingMessage] = useState("")
+  // const [usedMessages, setUsedMessages] = useState<string[]>([])tate("")
   // const [usedMessages, setUsedMessages] = useState<string[]>([])
-
   const draggedWorkoutRef = useRef<WorkoutAssignmentDetails | null>(null);
-
+  const draggedWorkoutRef = useRef<WorkoutAssignmentDetails | null>(null);
   const [generatePlanCardImage, setGeneratePlanCardImage] = useState<string | null>(null);
-  const [currentWorkout, setCurrentWorkout] = useState<WorkoutPlan | null>(null);
-  const [workoutDuration, setWorkoutDuration] = useState(45) 
+  const [currentWorkout, setCurrentWorkout] = useState<WorkoutPlan | null>(null);l>(null);
+  const [workoutDuration, setWorkoutDuration] = useState(45) tPlan | null>(null);
   const [workoutType, setWorkoutType] = useState("fullBody") 
-  
+  const [workoutType, setWorkoutType] = useState("fullBody") 
   const initialTargetMuscles = {
-    upperBody: [] as string[],
-    core: [] as string[],
+    upperBody: [] as string[], {
+    core: [] as string[],ng[],
     lowerBody: [] as string[],
-  }
+  } lowerBody: [] as string[],
   const [targetMuscles, setTargetMuscles] = useState(initialTargetMuscles)
-  
+  const [targetMuscles, setTargetMuscles] = useState(initialTargetMuscles)
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([])
-  const [otherEquipment, setOtherEquipment] = useState("")
+  const [otherEquipment, setOtherEquipment] = useState("")te<string[]>([])
+  const [activeTab, setActiveTab] = useState("general")"")
   const [activeTab, setActiveTab] = useState("general")
-
   const [weeklySchedule, setWeeklySchedule] = useState<Array<DayAssignment | null>>(Array(7).fill(null));
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
-  const [isDayOptionsModalOpen, setIsDayOptionsModalOpen] = useState(false);
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);l>>(Array(7).fill(null));
+  const [isDayOptionsModalOpen, setIsDayOptionsModalOpen] = useState(false);ll);
   const [assigningWorkoutToDayIndex, setAssigningWorkoutToDayIndex] = useState<number | null>(null);
-
+  const [assigningWorkoutToDayIndex, setAssigningWorkoutToDayIndex] = useState<number | null>(null);
   // Subscription modal state
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
-  const [promoCode, setPromoCode] = useState("");
+  const [promoCode, setPromoCode] = useState("");onModalOpen] = useState(false);
   const [promoCodeError, setPromoCodeError] = useState("");
-
+  const [promoCodeError, setPromoCodeError] = useState("");
   // Loading message state
   const [loadingMessage, setLoadingMessage] = useState<string>("");
-
+  const [loadingMessage, setLoadingMessage] = useState<string>("");
   // Day assignment modal for workout cards
   const [isAssignWorkoutModalOpen, setIsAssignWorkoutModalOpen] = useState(false);
   const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutAssignmentDetails | null>(null);
-
+  const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutAssignmentDetails | null>(null);
   // const [isAssignToDayModalOpen, setIsAssignToDayModalOpen] = useState(false);
   // const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutAssignmentDetails | null>(null);
-
+  // const [workoutToAssign, setWorkoutToAssign] = useState<WorkoutAssignmentDetails | null>(null);
   // New state for the Workout Edit Options Modal
   const [isWorkoutEditModalOpen, setIsWorkoutEditModalOpen] = useState(false);
   const [dayIndexForWorkoutEdit, setDayIndexForWorkoutEdit] = useState<number | null>(null);
-
+  const [dayIndexForWorkoutEdit, setDayIndexForWorkoutEdit] = useState<number | null>(null);
   const [isClearAllDialogOpen, setIsClearAllDialogOpen] = useState(false); // State for Clear All confirmation dialog
-
+  const [isClearAllDialogOpen, setIsClearAllDialogOpen] = useState(false); // State for Clear All confirmation dialog
   // Mobile view state for bottom navigation
   const [currentView, setCurrentView] = useState<'dashboard' | 'calendar' | 'history' | 'workout'>('workout');
-
+  const [currentView, setCurrentView] = useState<'dashboard' | 'calendar' | 'history' | 'workout'>('workout');
   // Check URL parameters for navigation state
-  useEffect(() => {
+  useEffect(() => {meters for navigation state
     if (!searchParams) return;
-    
+    if (!searchParams) return;
     const view = searchParams.get('view');
     const shouldGenerate = searchParams.get('generate');
-    
+    const shouldGenerate = searchParams.get('generate');
     if (view === 'calendar') {
       setCurrentView('calendar');
     } else if (view === 'history') {
-      setCurrentView('history');
+      setCurrentView('history');') {
     } else if (view === 'workout') {
+      setCurrentView('workout');') {
+    } else {rentView('workout');
       setCurrentView('workout');
-    } else {
-      setCurrentView('workout');
+    } setCurrentView('workout');
     }
-    
     if (shouldGenerate === 'true') {
-      setIsModalOpen(true);
+      setIsModalOpen(true);'true') {
       // Remove the parameter from URL to prevent repeated triggering
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete('generate');
+      const newUrl = new URL(window.location.href);epeated triggering
+      newUrl.searchParams.delete('generate');href);
       window.history.replaceState({}, '', newUrl.toString());
-    }
+    } window.history.replaceState({}, '', newUrl.toString());
   }, [searchParams]);
-
+  }, [searchParams]);
   // Listen for bottom navigation events from GlobalBottomNavigation
-  useEffect(() => {
+  useEffect(() => {tom navigation events from GlobalBottomNavigation
     const handleViewChange = (event: CustomEvent) => {
-      setCurrentView(event.detail.view);
+      setCurrentView(event.detail.view);tomEvent) => {
+    };setCurrentView(event.detail.view);
     };
-
     const handleWorkoutGeneration = () => {
-      setIsModalOpen(true);
+      setIsModalOpen(true);ration = () => {
+    };setIsModalOpen(true);
     };
-
     window.addEventListener('dashboardViewChange', handleViewChange as EventListener);
+    window.addEventListener('triggerWorkoutGeneration', handleWorkoutGeneration);ner);
     window.addEventListener('triggerWorkoutGeneration', handleWorkoutGeneration);
-
     return () => {
       window.removeEventListener('dashboardViewChange', handleViewChange as EventListener);
-      window.removeEventListener('triggerWorkoutGeneration', handleWorkoutGeneration);
-    };
+      window.removeEventListener('triggerWorkoutGeneration', handleWorkoutGeneration);ner);
+    };window.removeEventListener('triggerWorkoutGeneration', handleWorkoutGeneration);
   }, []);
-
+  }, []);
   // All useEffect hooks must be called before any early returns
   // 1. On mount, load weeklySchedule from Firestore subcollection (users/{uid}/weeklySchedule/{dayIndex})
-  useEffect(() => {
+  useEffect(() => {oad weeklySchedule from Firestore subcollection (users/{uid}/weeklySchedule/{dayIndex})
     if (!user || !app || !isFirebaseConfigured) return;
-    const db = getFirestore(app);
+    const db = getFirestore(app);aseConfigured) return;
     const fetchWeeklySchedule = async () => {
-      try {
+      try {etchWeeklySchedule = async () => {
         const scheduleCol = collection(db, `users/${user.uid}/weeklySchedule`);
-        const snapshot = await getDocs(scheduleCol);
+        const snapshot = await getDocs(scheduleCol);user.uid}/weeklySchedule`);
         const scheduleArr: Array<DayAssignment | null> = Array(7).fill(null);
-        snapshot.forEach(docSnap => {
+        snapshot.forEach(docSnap => {ssignment | null> = Array(7).fill(null);
           const idx = parseInt(docSnap.id, 10);
           if (!isNaN(idx) && idx >= 0 && idx < 7) {
             scheduleArr[idx] = docSnap.data() as DayAssignment;
-          }
+          } scheduleArr[idx] = docSnap.data() as DayAssignment;
         });
         setWeeklySchedule(scheduleArr);
-      } catch (err) {
+      } catch (err) {dule(scheduleArr);
         console.error("Error loading weekly schedule from Firestore:", err);
-      }
-    };
+      } console.error("Error loading weekly schedule from Firestore:", err);
+    };}
     fetchWeeklySchedule();
+  }, [user]);lySchedule();
   }, [user]);
-
   // Load current active workout from userProfile
-  useEffect(() => {
+  useEffect(() => {ctive workout from userProfile
     if (userProfile?.activePlan) {
       setCurrentWorkout(userProfile.activePlan);
-    } else {
+    } else {rentWorkout(userProfile.activePlan);
       setCurrentWorkout(null);
-    }
+    } setCurrentWorkout(null);
   }, [userProfile]);
-
+  }, [userProfile]);
   // Always fetch the latest user profile from Firestore on mount or when user changes
-  useEffect(() => {
+  useEffect(() => {he latest user profile from Firestore on mount or when user changes
     if (!user || !app || !isFirebaseConfigured) {
       console.log("Dashboard ProfileFetch: No user or app, skipping profile fetch.");
-      return;
-    }
+      return;.log("Dashboard ProfileFetch: No user or app, skipping profile fetch.");
+    } return;
     const db = getFirestore(app);
     console.log("Dashboard ProfileFetch: User detected (uid:", user.uid, "), attempting to fetch profile.");
-    const fetchUserProfile = async () => {
-      try {
+    const fetchUserProfile = async () => {ser detected (uid:", user.uid, "), attempting to fetch profile.");
+      try {etchUserProfile = async () => {
         const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
+        const userDocSnap = await getDoc(userDocRef);;
+        if (userDocSnap.exists()) {etDoc(userDocRef);
           const userData = userDocSnap.data();
           console.log("Dashboard ProfileFetch: Profile data fetched from Firestore:", JSON.stringify(userData));
-          if (setUserProfile) {
+          if (setUserProfile) {d ProfileFetch: Profile data fetched from Firestore:", JSON.stringify(userData));
             console.log("Dashboard ProfileFetch: Calling setUserProfile with fetched data.");
-            setUserProfile(userData as UserProfile);
-          }
+            setUserProfile(userData as UserProfile);ling setUserProfile with fetched data.");
+          } setUserProfile(userData as UserProfile);
         } else {
           console.log("Dashboard ProfileFetch: User document not found in Firestore for uid:", user.uid);
-          if (setUserProfile) {
+          if (setUserProfile) {d ProfileFetch: User document not found in Firestore for uid:", user.uid);
             console.log("Dashboard ProfileFetch: Setting userProfile to null as Firestore doc not found.");
-            setUserProfile(null); 
-          }
-        }
+            setUserProfile(null);  ProfileFetch: Setting userProfile to null as Firestore doc not found.");
+          } setUserProfile(null); 
+        } }
       } catch (err) {
         console.error("Dashboard ProfileFetch: Error fetching user profile from Firestore:", err);
-      }
-    };
+      } console.error("Dashboard ProfileFetch: Error fetching user profile from Firestore:", err);
+    };}
     fetchUserProfile();
   }, [user, setUserProfile]);
-
+  }, [user, setUserProfile]);
   useEffect(() => {
     if (userProfile?.gender) {
       setGeneratePlanCardImage(getNextWorkoutImage(userProfile.gender));
-    }
+    } setGeneratePlanCardImage(getNextWorkoutImage(userProfile.gender));
   }, [userProfile?.gender]);
-
+  }, [userProfile?.gender]);
   useEffect(() => {
     if (user && app && isFirebaseConfigured) {
-      const db = getFirestore(app);
+      const db = getFirestore(app);nfigured) {
       const fetchCompletedPlans = async () => {
-        // db is already initialized
+        // db is already initializedync () => {
         const logsCollectionRef = collection(db, `users/${user.uid}/logs`);
+        const q = query(logsCollectionRef, orderBy("timestamp", "desc")); ;
         const q = query(logsCollectionRef, orderBy("timestamp", "desc")); 
-
         try {
           const querySnapshot = await getDocs(q);
           const plans = querySnapshot.docs.map(doc => ({
-            id: doc.id,
+            id: doc.id, querySnapshot.docs.map(doc => ({
             ...doc.data()
           } as CompletedPlan));
           setCompletedPlans(plans);
-        } catch (error) {
+        } catch (error) {ns(plans);
           console.error("Error fetching completed plans:", error);
-        }
+        } console.error("Error fetching completed plans:", error);
+      };}
       };
-
       fetchCompletedPlans();
-    } else {
+    } else {ompletedPlans();
       setCompletedPlans([]); 
-    }
+    } setCompletedPlans([]); 
   }, [user]); 
-
+  }, [user]); 
   // Handle Firebase app initialization safely - moved after all hooks
-  if (!app || !isFirebaseConfigured) {
+  if (!app || !isFirebaseConfigured) {n safely - moved after all hooks
     console.error("Firebase app not initialized");
     return <div>Firebase configuration error</div>;
+  } return <div>Firebase configuration error</div>;
   }
-  
   const db = getFirestore(app);
-
+  const db = getFirestore(app);
   // ADDED: handleEquipmentChange function
   const handleEquipmentChange = (item: string, checked: boolean) => {
-    setSelectedEquipment(prev => 
+    setSelectedEquipment(prev => item: string, checked: boolean) => {
       checked ? [...prev, item] : prev.filter(eq => eq !== item)
-    );
+    );checked ? [...prev, item] : prev.filter(eq => eq !== item)
+  };);
   };
-
   // ADDED: handleTargetMuscleChange function
   const handleTargetMuscleChange = (category: keyof typeof initialTargetMuscles, muscle: string, checked: boolean) => {
-    setTargetMuscles(prev => {
+    setTargetMuscles(prev => {ge = (category: keyof typeof initialTargetMuscles, muscle: string, checked: boolean) => {
       const newCategoryMuscles = checked 
         ? [...(prev[category] || []), muscle]
         : (prev[category] || []).filter(m => m !== muscle);
-      return { ...prev, [category]: newCategoryMuscles };
-    });
+      return { ...prev, [category]: newCategoryMuscles };);
+    });eturn { ...prev, [category]: newCategoryMuscles };
+  };});
   };
-
   // ADDED: handleSelectAllMuscles function
   const handleSelectAllMuscles = (category: keyof typeof initialTargetMuscles, checked: boolean) => {
-    setTargetMuscles(prev => ({
-      ...prev,
+    setTargetMuscles(prev => ({= (category: keyof typeof initialTargetMuscles, checked: boolean) => {
+      ...prev,uscles(prev => ({
       [category]: checked ? muscleGroups[category] : [],
-    }));
+    }));ategory]: checked ? muscleGroups[category] : [],
+  };}));
   };
-
   // Convert completed plan to workout assignment details
   const convertCompletedPlanToWorkoutDetails = (completedPlan: CompletedPlan): WorkoutAssignmentDetails => {
-    const planTitle = completedPlan.plan?.plan?.title || completedPlan.plan?.title || "Unnamed Workout";
-    const planDurationValue = completedPlan.plan?.plan?.duration || completedPlan.plan?.duration;
-    const planDuration = planDurationValue 
+    const planTitle = completedPlan.plan?.plan?.title || completedPlan.plan?.title || "Unnamed Workout";=> {
+    const planDurationValue = completedPlan.plan?.plan?.duration || completedPlan.plan?.duration;rkout";
+    const planDuration = planDurationValue .plan?.plan?.duration || completedPlan.plan?.duration;
       ? (typeof planDurationValue === 'number' ? formatDuration(planDurationValue) : planDurationValue.toString())
-      : "Duration not set";
+      : "Duration not set";nValue === 'number' ? formatDuration(planDurationValue) : planDurationValue.toString())
     const planImage = completedPlan.image || completedPlan.plan?.imageUrl || completedPlan.plan?.image;
-    
+    const planImage = completedPlan.image || completedPlan.plan?.imageUrl || completedPlan.plan?.image;
     return {
       planId: completedPlan.id,
-      title: planTitle,
+      title: planTitle,Plan.id,
       duration: planDuration,
       ...(planImage && { imageUrl: planImage }),
-    };
+    };...(planImage && { imageUrl: planImage }),
+  };};
   };
-
   // Handle opening the day assignment modal for a workout
   const handleOpenWorkoutAssignmentModal = (completedPlan: CompletedPlan) => {
     const workoutDetails = convertCompletedPlanToWorkoutDetails(completedPlan);
-    setWorkoutToAssign(workoutDetails);
-    setIsAssignWorkoutModalOpen(true);
+    setWorkoutToAssign(workoutDetails);etedPlanToWorkoutDetails(completedPlan);
+    setIsAssignWorkoutModalOpen(true);;
+  };setIsAssignWorkoutModalOpen(true);
   };
-
   // Handle assigning workout to a specific day
   const handleAssignWorkoutToSpecificDay = async (dayIndex: number) => {
-    if (!workoutToAssign || dayIndex < 0 || dayIndex >= 7) return;
+    const workoutToAssignDetails = workoutToAssign;ayIndex: number) => {
+    if (!workoutToAssignDetails || dayIndex < 0 || dayIndex >= 7) return;
 
-    await assignWorkoutToDay(dayIndex, workoutToAssign);
+    await assignWorkoutToDay(dayIndex, workoutToAssignDetails);
     setIsAssignWorkoutModalOpen(false);
     setWorkoutToAssign(null);
   };
@@ -1076,97 +1076,103 @@ interface UserProfile {
           <ImageIcon className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
           <p className="text-muted-foreground dark:text-slate-400 text-lg">No completed workouts yet</p>
           <p className="text-slate-500 dark:text-slate-500 text-sm mt-2">Generate your first workout to get started!</p>
-        </div>
-      )}
-    </div>
-  );
-
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 text-lg py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <Zap className="mr-2 h-6 w-6" /> Generate Workout
+          </Button> View Component
+        </div>WorkoutView = () => (
+      )} className="space-y-6">
+    </div> className="flex items-center justify-between mb-6">
+  );    <h2 className="text-2xl font-semibold text-slate-700 dark:text-slate-200">Current Workout</h2>
+      </div>
   // Mobile Workout View Component
   const MobileWorkoutView = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6">e dark:bg-slate-800/50 shadow-lg rounded-lg overflow-hidden relative">
+      <div className="flex items-center justify-between mb-6">/}
         <h2 className="text-2xl font-semibold text-slate-700 dark:text-slate-200">Current Workout</h2>
-      </div>
-      
-      {currentWorkout ? (
+      </div><div className="absolute inset-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
+              <Loader2 className="animate-spin h-10 w-10 text-orange-500 mb-3" />
+      {currentWorkout ? (e="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2">Generating Your Workout...</p>
         <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg overflow-hidden relative">
-          {/* Loading overlay for current workout generation */}
+          {/* Loading overlay for current workout generation */}late-400 max-w-xs text-center leading-relaxed px-4">
           {generating && assigningWorkoutToDayIndex === null && (
             <div className="absolute inset-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
               <Loader2 className="animate-spin h-10 w-10 text-orange-500 mb-3" />
               <p className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-2">Generating Your Workout...</p>
               {loadingMessage && (
                 <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs text-center leading-relaxed px-4">
-                  {loadingMessage}
-                </p>
-              )}
-            </div>
-          )}
-          
-          {/* Header with refresh button */}
-          <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700">
+                  {loadingMessage}button */}
+                </p>Name="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700">
+              )}className="text-lg font-semibold text-slate-700 dark:text-slate-200">Ready to Start</h3>
+            </div>n
+          )}  variant="ghost"
+              size="icon"
+          {/* Header with refresh button */}true)}
+          <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700">:bg-orange-50 dark:hover:bg-orange-900/20"
             <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">Ready to Start</h3>
             <Button
-              variant="ghost"
+              variant="ghost"sName="h-5 w-5" />
               size="icon"
               onClick={() => setIsModalOpen(true)}
               className="text-slate-500 hover:text-slate-500 dark:text-slate-400 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
               title="Generate new workout"
-            >
+            >v className="p-6">
               <RefreshCw className="h-5 w-5" />
-            </Button>
-          </div>
-          
-          {/* Workout card content */}
-          <div className="p-6">
+            </Button>sName="w-full aspect-video relative mb-6 rounded-lg overflow-hidden shadow-md">
+          </div>currentWorkout.image || currentWorkout.imageUrl) ? (
+                <Image
+          {/* Workout card content */}image || currentWorkout.imageUrl!}
+          <div className="p-6">orkout.title || "Current workout"}
             {/* Image */}
             <div className="w-full aspect-video relative mb-6 rounded-lg overflow-hidden shadow-md">
-              {(currentWorkout.image || currentWorkout.imageUrl) ? (
+              {(currentWorkout.image || currentWorkout.imageUrl) ? (00 ${generating && assigningWorkoutToDayIndex === null ? 'blur-sm' : ''}`}
                 <Image
                   src={currentWorkout.image || currentWorkout.imageUrl!}
-                  alt={currentWorkout.title || "Current workout"}
-                  fill
+                  alt={currentWorkout.title || "Current workout"}rom-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
+                  fillgeIcon className="h-16 w-16 text-slate-400 dark:text-slate-500" />
                   sizes="(max-width: 768px) 100vw, 50vw"
                   className={`object-cover transition-all duration-300 ${generating && assigningWorkoutToDayIndex === null ? 'blur-sm' : ''}`}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
                   <ImageIcon className="h-16 w-16 text-slate-400 dark:text-slate-500" />
-                </div>
-              )}
-            </div>
-            
-            {/* Title and duration */}
-            <div className="text-center mb-6 space-y-2">
+                </div>sName="text-xl font-bold text-slate-800 dark:text-slate-100">
+              )}{currentWorkout.plan?.title || currentWorkout.title || "Current Workout"}
+            </div>>
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-700">
+            {/* Title and duration */}font-medium text-slate-600 dark:text-slate-400">
+            <div className="text-center mb-6 space-y-2">on || currentWorkout.duration || "Not specified"}
               <h4 className="text-xl font-bold text-slate-800 dark:text-slate-100">
                 {currentWorkout.plan?.title || currentWorkout.title || "Current Workout"}
               </h4>
               <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-700">
                 <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                   Duration: {currentWorkout.plan?.duration || currentWorkout.duration || "Not specified"}
-                </p>
-              </div>
-            </div>
-            
+                </p>k={() => {
+              </div>currentWorkout.id && user) {
+            </div>router.push(`/workout/${user.uid}/${currentWorkout.id}`);
+                }
             {/* Start button */}
-            <Button
-              onClick={() => {
+            <Buttonled={!currentWorkout.id}
+              onClick={() => {l bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 text-lg py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
                 if (currentWorkout.id && user) {
                   router.push(`/workout/${user.uid}/${currentWorkout.id}`);
-                }
+                }ton>
               }}
               disabled={!currentWorkout.id}
               className="w-full bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700 text-lg py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              <Zap className="mr-2 h-6 w-6" /> Start Workout
-            </Button>
-          </div>
-        </div>
-      ) : (
-        /* No workout state */
+            > workout state */
+              <Zap className="mr-2 h-6 w-6" /> Start Workout-lg rounded-lg p-8 text-center">
+            </Button>ame="w-24 h-24 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 rounded-lg flex items-center justify-center mx-auto mb-6">
+          </div>geIcon className="h-12 w-12 text-slate-400 dark:text-slate-500" />
+        </div>v>
+      ) : (h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-3">No Active Workout</h3>
+        /* No workout state */late-600 dark:text-slate-400 mb-8 leading-relaxed">Generate your first AI-powered workout to get started on your fitness journey!</p>
         <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg p-8 text-center">
           <div className="w-24 h-24 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 rounded-lg flex items-center justify-center mx-auto mb-6">
-            <ImageIcon className="h-12 w-12 text-slate-400 dark:text-slate-500" />
+            <ImageIcon className="h-12 w-12 text-slate-400 dark:text-slate-500" />-orange-600 dark:hover:bg-orange-700 text-lg py-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
           </div>
           <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-3">No Active Workout</h3>
           <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">Generate your first AI-powered workout to get started on your fitness journey!</p>
@@ -1176,22 +1182,22 @@ interface UserProfile {
           >
             <Zap className="mr-2 h-6 w-6" /> Generate Workout
           </Button>
-        </div>
-      )}
-    </div>
-  );
-
-  return (
+        </div>Name="container mx-auto px-4 py-8 pb-safe-24 md:pb-8">
+      )}* Mobile View Conditional Rendering */}
+    </div> className="md:hidden">
+  );    {currentView === 'calendar' && <MobileCalendarView />}
+        {currentView === 'history' && <MobileHistoryView />}
+  return (urrentView === 'workout' && <MobileWorkoutView />}
     <div className="container mx-auto px-4 py-8 pb-safe-24 md:pb-8">
       {/* Mobile View Conditional Rendering */}
-      <div className="md:hidden">
+      <div className="md:hidden">ard for Mobile */}
         {currentView === 'calendar' && <MobileCalendarView />}
         {currentView === 'history' && <MobileHistoryView />}
-        {currentView === 'workout' && <MobileWorkoutView />}
-        {currentView === 'dashboard' && (
-          <>
-            {/* Current Workout Card for Mobile */}
-            {currentWorkout && (
+        {currentView === 'workout' && <MobileWorkoutView />}0 shadow-lg rounded-lg p-6">
+        {currentView === 'dashboard' && (font-semibold mb-4 text-slate-700 dark:text-slate-200">Current Workout</h3>
+          <>      <div className="flex items-center space-x-4">
+            {/* Current Workout Card for Mobile */}ntWorkout.imageUrl) ? (
+            {currentWorkout && (Name="w-20 h-20 relative rounded-lg overflow-hidden flex-shrink-0">
               <section className="mb-8">
                 <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg p-6">
                   <h3 className="text-xl font-semibold mb-4 text-slate-700 dark:text-slate-200">Current Workout</h3>
@@ -1201,48 +1207,48 @@ interface UserProfile {
                         <Image
                           src={currentWorkout.image || currentWorkout.imageUrl!}
                           alt={currentWorkout.title || "Current workout"}
-                          fill
-                          sizes="80px"
+                          fillssName="w-20 h-20 bg-slate-200 dark:bg-slate700 flex items-center justify-center rounded-lg flex-shrink-0">
+                          sizes="80px"ssName="h-10 w-10 text-slate-400 dark:text-slate-500" />
                           className="object-cover"
                         />
                       </div>
-                    ) : (
+                    ) : (className="flex-1 min-w-0">
                       <div className="w-20 h-20 bg-slate-200 dark:bg-slate700 flex items-center justify-center rounded-lg flex-shrink-0">
-                        <ImageIcon className="h-10 w-10 text-slate-400 dark:text-slate-500" />
+                        <ImageIcon className="h-10 w-10 text-slate-400 dark:text-slate-500" />t"}
                       </div>
-                    )}
-                    
+                    )}<p className="text-sm text-muted-foreground dark:text-slate-400">
+                        {currentWorkout.plan?.duration || currentWorkout.duration || "Not specified"}
                     <div className="flex-1 min-w-0">
                       <h4 className="font-bold text-primary dark:text-orange-400 truncate">
                         {currentWorkout.plan?.title || currentWorkout.title || "Current Workout"}
                       </h4>
                       <p className="text-sm text-muted-foreground dark:text-slate-400">
                         {currentWorkout.plan?.duration || currentWorkout.duration || "Not specified"}
-                      </p>
+                      </p>router.push(`/workout/${user.uid}/${currentWorkout.id}`);
                     </div>
-                    
-                    <Button
-                      onClick={() => {
+                      }}
+                    <Buttonled={!currentWorkout.id}
+                      onClick={() => {ange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
                         if (currentWorkout.id && user) {
                           router.push(`/workout/${user.uid}/${currentWorkout.id}`);
-                        }
+                        }ton>
                       }}
                       disabled={!currentWorkout.id}
                       className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
                     >
                       Start
-                    </Button>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* Quick Overview for Mobile */}
+                    </Button>w for Mobile */}
+                  </div>ssName="mb-8">
+                </div>sName="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-4">Quick Overview</h2>
+              </section>Name="grid grid-cols-2 gap-4">
+            )}  <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            {/* Quick Overview for Mobile */}y => day?.type === 'workout').length}
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-4">Quick Overview</h2>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg text-center">">
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">">
                     {weeklySchedule.filter(day => day?.type === 'workout').length}
                   </div>
                   <div className="text-sm text-blue-700 dark:text-blue-300">Workouts This Week</div>
@@ -1253,125 +1259,125 @@ interface UserProfile {
                   </div>
                   <div className="text-sm text-green-700 dark:text-green-300">Total Workouts</div>
                 </div>
-              </div>
-            </section>
-          </>
-        )}
-      </div>
-
-      {/* Desktop View (Hidden on Mobile) */}
-      <div className="hidden md:block">
+              </div>ew (Hidden on Mobile) */}
+            </section>hidden md:block">
+          </>eader */}
+        )}eader className="mb-8 flex justify-between items-center">
+      </div>iv>
+            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Welcome, {String(userProfile?.name || "let's get fit")}!</h1>
+      {/* Desktop View (Hidden on Mobile) */}uted-foreground dark:text-slate-400">
+      <div className="hidden md:block">self? Let&apos;s get started.
         {/* Header */}
         <header className="mb-8 flex justify-between items-center">
-          <div>
+          <div>className="flex items-center gap-4">
             <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Welcome, {String(userProfile?.name || "let's get fit")}!</h1>
             <p className="mt-2 text-lg text-muted-foreground dark:text-slate-400">
               Ready to forge your best self? Let&apos;s get started.
-            </p>
-          </div>
+            </p>assName="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
+          </div>Click={() => setIsModalOpen(true)}
           <div className="flex items-center gap-4">
-            <Button 
+            <Button lassName="mr-2 h-5 w-5" /> Generate Workout
               variant="default" 
               size="lg" 
               className="bg-orange-500 hover:bg-orange-600 text-white dark:bg-orange-600 dark:hover:bg-orange-700"
               onClick={() => setIsModalOpen(true)}
-            >
+            >eekly Schedule Section */}
               <Zap className="mr-2 h-5 w-5" /> Generate Workout
-            </Button>
-          </div>
-        </header>
-
+            </Button>ame="flex justify-between items-center mb-4">
+          </div>className="text-2xl font-semibold text-slate-700 dark:text-slate-200">Weekly Schedule</h2>
+        </header>on
+              variant="outline"
         {/* Weekly Schedule Section */}
-        <section className="mb-12">
+        <section className="mb-12">uctive border-destructive hover:bg-destructive/10 dark:text-red-500 dark:border-red-500 dark:hover:bg-red-900/20"
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-slate-700 dark:text-slate-200">Weekly Schedule</h2>
-            <Button
+            <Button All
               variant="outline"
               size="sm"
               className="text-destructive border-destructive hover:bg-destructive/10 dark:text-red-500 dark:border-red-500 dark:hover:bg-red-900/20"
-              onClick={() => setIsClearAllDialogOpen(true)}
-            >
-              Clear All
-            </Button>
+              onClick={() => setIsClearAllDialogOpen(true)}=> {
+            > const dayAssignment = weeklySchedule[index];
+              Clear AllssigningToThisDay = generating && assigningWorkoutToDayIndex === index;
+            </Button>anInteractWithCard = !isAssigningToThisDay;
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
             {DAYS_OF_WEEK_ABBREVIATED.map((dayName, index) => {
               const dayAssignment = weeklySchedule[index];
-              const isAssigningToThisDay = generating && assigningWorkoutToDayIndex === index;
-              const canInteractWithCard = !isAssigningToThisDay;
-              
-              return (
-                <div
-                  key={index}
+              const isAssigningToThisDay = generating && assigningWorkoutToDayIndex === index;fy-start min-h-[160px] sm:min-h-[180px] relative transition-all duration-200 ease-in-out ${
+              const canInteractWithCard = !isAssigningToThisDay;shadow-lg hover:border-orange-400 dark:hover:border-orange-500 border-2 border-transparent' : 'border-2 border-transparent'
+                  } ${
+              return (AssigningToThisDay 
+                <div  ? 'bg-slate-100 dark:bg-slate-800 ring-2 ring-orange-500 opacity-70' 
+                  key={index}signment?.type === 'workout' 
                   className={`rounded-lg p-3 sm:p-4 shadow-md flex flex-col items-center justify-start min-h-[160px] sm:min-h-[180px] relative transition-all duration-200 ease-in-out ${
                     canInteractWithCard ? 'cursor-pointer hover:shadow-lg hover:border-orange-400 dark:hover:border-orange-500 border-2 border-transparent' : 'border-2 border-transparent'
-                  } ${
-                    isAssigningToThisDay 
+                  } ${    ? 'bg-green-50 dark:bg-green-900/30' 
+                    isAssigningToThisDay ?.type === 'stretch' 
                       ? 'bg-slate-100 dark:bg-slate-800 ring-2 ring-orange-500 opacity-70' 
-                      : dayAssignment?.type === 'workout' 
+                      : dayAssignment?.type === 'workout' 00/60'
                         ? 'bg-blue-50 dark:bg-blue-900/30' 
-                        : dayAssignment?.type === 'rest' 
-                          ? 'bg-green-50 dark:bg-green-900/30' 
-                          : dayAssignment?.type === 'stretch' 
+                        : dayAssignment?.type === 'rest' andleDayCardClick(index)}
+                          ? 'bg-green-50 dark:bg-green-900/30' ver : undefined}
+                          : dayAssignment?.type === 'stretch' rop(e, index) : undefined}
                             ? 'bg-yellow-50 dark:bg-yellow-900/30' 
                             : 'bg-slate-50 dark:bg-slate-800/60'
-                  }`}
+                  }`}yAssignment?.type === 'workout' && canInteractWithCard && (
                   onClick={() => canInteractWithCard && handleDayCardClick(index)}
                   onDragOver={canInteractWithCard ? handleDragOver : undefined}
                   onDrop={canInteractWithCard ? (e) => handleDrop(e, index) : undefined}
-                >
-                  {/* Edit button for assigned workouts */}
+                >     onClick={(e) => handleOpenWorkoutEditModal(index, e)}
+                  {/* Edit button for assigned workouts */}0 p-1 h-7 w-7 bg-slate-100/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                   {dayAssignment?.type === 'workout' && canInteractWithCard && (
-                    <Button
+                    <Button3 size={16} />
                       variant="ghost"
                       size="icon"
                       onClick={(e) => handleOpenWorkoutEditModal(index, e)}
                       className="absolute top-1 right-1 z-20 p-1 h-7 w-7 bg-slate-100/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-                    >
-                      <Edit3 size={16} />
-                    </Button>
-                  )}
-
+                    >div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 dark:bg-slate-800/70 rounded-lg">
+                      <Edit3 size={16} />"animate-spin h-8 w-8 text-orange-500" />
+                    </Button>sName="text-xs text-slate-500 dark:text-slate-400 mt-2">Assigning...</p>
+                  )}  {loadingMessage && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-center px-2 leading-tight">
                   {isAssigningToThisDay ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 dark:bg-slate-800/70 rounded-lg">
                       <Loader2 className="animate-spin h-8 w-8 text-orange-500" />
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Assigning...</p>
                       {loadingMessage && (
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-center px-2 leading-tight">
-                          {loadingMessage}
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col justify-between h-full">
+                          {loadingMessage} items-center gap-3 mb-2">
+                        </p>Assignment?.type === 'workout' && dayAssignment.workoutDetails && (dayAssignment.workoutDetails.image || dayAssignment.workoutDetails.imageUrl) ? (
+                      )}  <div className="w-16 h-16 md:w-full md:aspect-square rounded-lg overflow-hidden flex-shrink-0 mb-0 md:mb-3">
+                    </div>  <Image
+                  ) : (       src={dayAssignment.workoutDetails.image || dayAssignment.workoutDetails.imageUrl!}
+                    <div className="flex flex-col justify-between h-full">Workout image'}
                       <div className="flex items-center gap-3 mb-2">
-                        {dayAssignment?.type === 'workout' && dayAssignment.workoutDetails && (dayAssignment.workoutDetails.image || dayAssignment.workoutDetails.imageUrl) ? (
+                        {dayAssignment?.type === 'workout' && dayAssignment.workoutDetails && dayAssignment.workoutDetails.imageUrl ? (
                           <div className="w-16 h-16 md:w-full md:aspect-square rounded-lg overflow-hidden flex-shrink-0 mb-0 md:mb-3">
                             <Image
-                              src={dayAssignment.workoutDetails.image || dayAssignment.workoutDetails.imageUrl!}
+                              src={dayAssignment.workoutDetails.imageUrl}
                               alt={dayAssignment.workoutDetails.title || 'Workout image'}
-                              fill
-                              sizes="64px, (min-width: 768px) 100vw, 220px"
+                              fillssName="w-16 h-16 md:w-full md:aspect-square bg-slate-200 dark:bg-slate-700 flex items-center justify-center rounded-lg overflow-hidden flex-shrink-0 mb-0 md:mb-3">
+                              sizes="64px, (min-width: 768px) 100vw, 220px"rk:text-slate-500" />
                               className="object-cover"
                             />
-                          </div>
-                        ) : (
+                          </div>ssName="flex-1 min-w-0 flex flex-col justify-center md:items-center md:text-center">
+                        ) : (an className="font-semibold text-slate-700 dark:text-slate-200 mb-1 md:mb-2">{dayName}</span>
                           <div className="w-16 h-16 md:w-full md:aspect-square bg-slate-200 dark:bg-slate-700 flex items-center justify-center rounded-lg overflow-hidden flex-shrink-0 mb-0 md:mb-3">
                             <ImageIcon className="h-8 w-8 text-slate-400 dark:text-slate-500" />
-                          </div>
-                        )}
+                          </div>pan className="font-medium text-primary dark:text-orange-400 truncate">
+                        )}      {dayAssignment.workoutDetails.title}
                         <div className="flex-1 min-w-0 flex flex-col justify-center md:items-center md:text-center">
                           <span className="font-semibold text-slate-700 dark:text-slate-200 mb-1 md:mb-2">{dayName}</span>
                           {dayAssignment?.type === 'workout' && dayAssignment.workoutDetails ? (
-                            <>
+                            <></span>
                               <span className="font-medium text-primary dark:text-orange-400 truncate">
                                 {dayAssignment.workoutDetails.title}
-                              </span>
+                              </span>ssName="text-green-600 dark:text-green-300">Rest Day</span>
                               <span className="text-xs text-muted-foreground dark:text-slate-400">
-                                {dayAssignment.workoutDetails.duration || 'Duration not set'}
+                                {dayAssignment.workoutDetails.duration || 'Duration not set'}y</span>
                               </span>
-                            </>
-                          ) : dayAssignment?.type === 'rest' ? (
+                            </>an className="text-muted-foreground dark:text-slate-400 flex items-center gap-1 text-sm">
+                          ) : dayAssignment?.type === 'rest' ? ( Assign
                             <span className="text-green-600 dark:text-green-300">Rest Day</span>
                           ) : dayAssignment?.type === 'stretch' ? (
                             <span className="text-yellow-600 dark:text-yellow-300">Stretch Day</span>
@@ -1379,10 +1385,10 @@ interface UserProfile {
                             <span className="text-muted-foreground dark:text-slate-400 flex items-center gap-1 text-sm">
                               <PlusCircle className="h-4 w-4" /> Assign
                             </span>
-                          )}
-                        </div>
-                      </div>
-                      {/* Edit icon for desktop */}
+                          )}assName="hidden md:block absolute top-2 right-2 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200"
+                        </div>ick={e => {
+                      </div>e.stopPropagation();
+                      {/* Edit icon for desktop */}it(index);
                       {dayAssignment && (
                         <button
                           className="hidden md:block absolute top-2 right-2 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200"
@@ -1396,84 +1402,84 @@ interface UserProfile {
                       )}
                     </div>
                   )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Workout History and Generate Plan section */}
-        <section className="mb-12">
+                </div>story and Generate Plan section */}
+              ); className="mb-12">
+            })}className="flex flex-col lg:flex-row gap-6 items-stretch">
+          </div>Workout History Card */}
+        </section>lassName="flex-1 min-w-0 flex flex-col">
+              <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg p-6 flex flex-col h-[540px]">
+        {/* Workout History and Generate Plan section */} text-slate-700 dark:text-slate-200">Workout History</h3>
+        <section className="mb-12">gth > 0 ? (
           <div className="flex flex-col lg:flex-row gap-6 items-stretch">
-            {/* Workout History Card */}
-            <div className="flex-1 min-w-0 flex flex-col">
+            {/* Workout History Card */}(p) => {
+            <div className="flex-1 min-w-0 flex flex-col">e || p.plan?.title || "Unnamed Workout";
               <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg p-6 flex flex-col h-[540px]">
                 <h3 className="text-xl font-semibold mb-4 text-slate-700 dark:text-slate-200">Workout History</h3>
-                {completedPlans.length > 0 ? (
+                {completedPlans.length > 0 ? (Value === 'number' ? formatDuration(planDurationValue) : planDurationValue.toString())
                   <div className="flex-1 space-y-4 overflow-y-auto">
-                    {completedPlans.map((p) => {
+                    {completedPlans.map((p) => {|| p.plan?.imageUrl || p.plan?.image;
                       const planTitle = p.plan?.plan?.title || p.plan?.title || "Unnamed Workout";
                       const planDurationValue = p.plan?.plan?.duration || p.plan?.duration;
                       const planDuration = planDurationValue 
                         ? (typeof planDurationValue === 'number' ? formatDuration(planDurationValue) : planDurationValue.toString())
-                        : "Duration not set";
+                        : "Duration not set";late-50 dark:bg-slate-700/50 rounded-md shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0"
                       const planImage = p.image || p.plan?.imageUrl || p.plan?.image;
-                      
-                      return (
-                        <div
-                          key={p.id}
-                          className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-md shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0"
-                        >
                           <div className="flex items-center space-x-3 flex-grow">
-                            {planImage ? (
+                      return (lanImage ? (
+                        <div  <div className="w-12 h-12 relative rounded-md overflow-hidden flex-shrink-0">
+                          key={p.id}ge
+                          className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-md shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0"
+                        >         alt={planTitle}
+                          <div className="flex items-center space-x-3 flex-grow">
+                            {planImage ? (8px"
                               <div className="w-12 h-12 relative rounded-md overflow-hidden flex-shrink-0">
                                 <Image
                                   src={planImage}
                                   alt={planTitle}
-                                  fill
-                                  sizes="48px"
+                                  fillssName="w-12 h-12 flex items-center justify-center bg-slate-200 dark:bg-slate-700 rounded-md flex-shrink-0">
+                                  sizes="48px"ssName="h-6 w-6 text-slate-400 dark:text-slate-500" />
                                   className="object-cover"
                                 />
-                              </div>
-                            ) : (
+                              </div>ssName="flex-1 min-w-0">
+                            ) : (nk href={`/workout/${user?.uid}/${p.id}`} className="font-medium text-primary dark:text-orange-400 hover:underline">
                               <div className="w-12 h-12 flex items-center justify-center bg-slate-200 dark:bg-slate-700 rounded-md flex-shrink-0">
                                 <ImageIcon className="h-6 w-6 text-slate-400 dark:text-slate-500" />
-                              </div>
-                            )}
+                              </div>ssName="text-xs text-muted-foreground dark:text-slate-400 truncate">
+                            )}  {planDuration}
                             <div className="flex-1 min-w-0">
                               <Link href={`/workout/${user?.uid}/${p.id}`} className="font-medium text-primary dark:text-orange-400 hover:underline">
                                 {planTitle}
-                              </Link>
+                              </Link>ame="flex items-center space-x-2 flex-shrink-0">
                               <p className="text-xs text-muted-foreground dark:text-slate-400 truncate">
                                 {planDuration}
-                              </p>
-                            </div>
-                          </div>
+                              </p>="icon"
+                            </div>ick={(e) => {
+                          </div>e.preventDefault();
                           <div className="flex items-center space-x-2 flex-shrink-0">
-                            <Button
+                            <ButtondleOpenWorkoutAssignmentModal(p);
                               variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
+                              size="icon"text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 w-8 h-8"
+                              onClick={(e) => {schedule"
                                 e.preventDefault();
-                                e.stopPropagation();
+                                e.stopPropagation();e="h-4 w-4" />
                                 handleOpenWorkoutAssignmentModal(p);
-                              }}
+                              }}rtDialog>
                               className="text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 w-8 h-8"
-                              title="Assign to schedule"
-                            >
+                              title="Assign to schedule"size="icon" onClick={() => setPlanToDelete(p.id)} className="text-destructive hover:text-destructive/80 dark:text-red-500 dark:hover:text-red-400 w-8 h-8">
+                            >     <Trash2 className="h-4 w-4" />
                               <CalendarPlus className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
+                            </Button>DialogTrigger>
+                            <AlertDialog>te === p.id && (
+                              <AlertDialogTrigger asChild>ame="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                                 <Button variant="ghost" size="icon" onClick={() => setPlanToDelete(p.id)} className="text-destructive hover:text-destructive/80 dark:text-red-500 dark:hover:text-red-400 w-8 h-8">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              {planToDelete === p.id && (
+                                  <Trash2 className="h-4 w-4" />re?</AlertDialogTitle>
+                                </Button>tDialogDescription>
+                              </AlertDialogTrigger>annot be undone. This will permanently delete the workout log for &quot;{planTitle}&quot;.
+                              {planToDelete === p.id && (ion>
                                 <AlertDialogContent className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>null)} className="dark:text-slate-100 dark:border-slate-600 dark:hover:bg-slate-700">Cancel</AlertDialogCancel>
+                                    <AlertDialogDescription>ck={() => handleDeletePlan(p.id)} className="bg-destructive hover:bg-destructive/90 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white">Delete</AlertDialogAction>
                                       This action cannot be undone. This will permanently delete the workout log for &quot;{planTitle}&quot;.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
@@ -1484,23 +1490,23 @@ interface UserProfile {
                                 </AlertDialogContent>
                               )}
                             </AlertDialog>
-                          </div>
-                        </div>
+                          </div>="flex-1 flex items-center justify-center">
+                        </div>me="text-muted-foreground dark:text-slate-400">No completed workouts yet. Go crush one!</p>
                       );
                     })}
                   </div>
                 ) : (
                   <div className="flex-1 flex items-center justify-center">
                     <p className="text-muted-foreground dark:text-slate-400">No completed workouts yet. Go crush one!</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Generate Plan Card or Current Workout Card */}
-            <div className="flex-1 min-w-0 flex flex-col">
+                  </div>me="flex-1 min-w-0 flex flex-col">
+                )} className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg overflow-hidden flex flex-col items-center text-center p-6 md:p-8 h-[540px] justify-between relative">
+              </div>Loading overlay for current workout generation */}
+            </div>enerating && assigningWorkoutToDayIndex === null && (
+                  <div className="absolute inset-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
+            {/* Generate Plan Card or Current Workout Card */} text-orange-500 mb-4" />
+            <div className="flex-1 min-w-0 flex flex-col">xt-slate-700 dark:text-slate-200 mb-2">Generating Your Workout...</p>
               <div className="bg-white dark:bg-slate-800/50 shadow-lg rounded-lg overflow-hidden flex flex-col items-center text-center p-6 md:p-8 h-[540px] justify-between relative">
-                {/* Loading overlay for current workout generation */}
+                {/* Loading overlay for current workout generation */}late-400 max-w-xs text-center leading-relaxed">
                 {generating && assigningWorkoutToDayIndex === null && (
                   <div className="absolute inset-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-lg">
                     <Loader2 className="animate-spin h-12 w-12 text-orange-500 mb-4" />
@@ -1509,44 +1515,38 @@ interface UserProfile {
                       <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs text-center leading-relaxed">
                         {loadingMessage}
                       </p>
-                    )}
-                  </div>
-                )}
-                
-                {currentWorkout ? (
-                  <>
+                    )}iv className="w-full flex justify-end mb-2">
+                  </div>utton
+                )}      variant="ghost"
+                        size="icon"
+                {currentWorkout ? ( => setIsModalOpen(true)}
+                  <>    className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                     <div className="w-full flex justify-end mb-2">
-                      <Button
+                      <ButtoneshCw className="h-5 w-5" />
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsModalOpen(true)}
                         className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                      >
+                      >div className="w-full max-w-[220px] aspect-square relative mb-4 rounded-lg overflow-hidden">
                         <RefreshCw className="h-5 w-5" />
-                      </Button>
-                    </div>
-                    
+                      </Button>currentWorkout.image || currentWorkout.imageUrl!}
+                    </div>alt={currentWorkout.title || "Current workout"}
+                          fill
                     {(currentWorkout.image || currentWorkout.imageUrl) ? (
-                      <div className="w-full max-w-[220px] aspect-square relative mb-4 rounded-lg overflow-hidden">
+                      <div className="w-full max-w-[220px] aspect-square relative mb-4 rounded-lg overflow-hidden">yIndex === null ? 'blur-sm' : ''}`}
                         <Image
                           src={currentWorkout.image || currentWorkout.imageUrl!}
                           alt={currentWorkout.title || "Current workout"}
-                          fill
-                          sizes="220px"
+                          fillssName="w-full max-w-[220px] aspect-square bg-slate-200 dark:bg-slate-700 flex items-center justify-center mb-4 rounded-lg">
+                          sizes="220px"sName="h-20 w-20 text-slate-400 dark:text-slate-500" />
                           className={`object-cover transition-all duration-300 ${generating && assigningWorkoutToDayIndex === null ? 'blur-sm' : ''}`}
                         />
                       </div>
-                    ) : (
+                    ) : (className="flex-1 flex flex-col justify-center mb-4">
                       <div className="w-full max-w-[220px] aspect-square bg-slate-200 dark:bg-slate-700 flex items-center justify-center mb-4 rounded-lg">
-                        <ImageIcon className="h-20 w-20 text-slate-400 dark:text-slate-500" />
+                        <ImageIcon className="h-20 w-20 text-slate-400 dark:text-slate-500" />t"}
                       </div>
-                    )}
-                    
-                    <div className="flex-1 flex flex-col justify-center mb-4">
-                      <h3 className="text-xl font-bold text-primary dark:text-orange-400 mb-2">
-                        {currentWorkout.plan?.title || currentWorkout.title || "Current Workout"}
-                      </h3>
-                      <p className="text-sm text-muted-foreground dark:text-slate-400 mb-4">
+                    )}<p className="text-sm text-muted-foreground dark:text-slate-400 mb-4">
                         Duration: {currentWorkout.plan?.duration || currentWorkout.duration || "Not specified"}
                       </p>
                     </div>

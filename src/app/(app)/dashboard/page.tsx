@@ -17,8 +17,7 @@ import { Label } from "@/components/ui/label"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"; 
 import Link from 'next/link'; 
 import { Loader2, Edit3, PlusCircle, Coffee, Repeat, Zap, CalendarPlus, Trash2, ImageIcon, XCircle, Eye, RefreshCw } from "lucide-react"; // Added RefreshCw icon
-// import { Slider } from "@/components/ui/slider"
-// import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Pencil } from "lucide-react";
 
 const IMAGE_POOL_SIZE = 35
 
@@ -747,12 +746,6 @@ interface UserProfile {
     setIsDayOptionsModalOpen(true);
   };
 
-  const handleDragStart = (event: React.DragEvent<HTMLDivElement>, workoutDetails: WorkoutAssignmentDetails) => {
-    draggedWorkoutRef.current = workoutDetails;
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", workoutDetails.planId);
-  };
-
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault(); 
     // Allow drop always, as global edit mode is removed.
@@ -1342,7 +1335,7 @@ interface UserProfile {
                   {isAssigningToThisDay ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 dark:bg-slate-800/70 rounded-lg">
                       <Loader2 className="animate-spin h-8 w-8 text-orange-500" />
-                      <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">Assigning...</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Assigning...</p>
                       {loadingMessage && (
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-center px-2 leading-tight">
                           {loadingMessage}
@@ -1369,15 +1362,19 @@ interface UserProfile {
                         )}
                         <div className="flex-1 min-w-0 flex flex-col justify-center md:items-center md:text-center">
                           <span className="font-semibold text-slate-700 dark:text-slate-200 mb-1 md:mb-2">{dayName}</span>
-                          {dayAssignment ? (
+                          {dayAssignment?.type === 'workout' && dayAssignment.workoutDetails ? (
                             <>
                               <span className="font-medium text-primary dark:text-orange-400 truncate">
-                                {dayAssignment.title}
+                                {dayAssignment.workoutDetails.title}
                               </span>
                               <span className="text-xs text-muted-foreground dark:text-slate-400">
-                                {dayAssignment.duration || 'Duration not set'}
+                                {dayAssignment.workoutDetails.duration || 'Duration not set'}
                               </span>
                             </>
+                          ) : dayAssignment?.type === 'rest' ? (
+                            <span className="text-green-600 dark:text-green-300">Rest Day</span>
+                          ) : dayAssignment?.type === 'stretch' ? (
+                            <span className="text-yellow-600 dark:text-yellow-300">Stretch Day</span>
                           ) : (
                             <span className="text-muted-foreground dark:text-slate-400 flex items-center gap-1 text-sm">
                               <PlusCircle className="h-4 w-4" /> Assign

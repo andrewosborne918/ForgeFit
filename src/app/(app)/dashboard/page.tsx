@@ -701,7 +701,6 @@ interface UserProfile {
     }
   }
 
-  // Function to update a day's assignment in Firestore
   // const handleViewAndStartActivePlan = async () => {
   //   if (!user || !plan) {
   //     console.warn("User or active plan not available for handleViewAndStartActivePlan.")
@@ -1118,7 +1117,7 @@ interface UserProfile {
               variant="ghost"
               size="icon"
               onClick={() => setIsModalOpen(true)}
-              className="text-slate-500 hover:text-orange-500 dark:text-slate-400 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+              className="text-slate-500 hover:text-slate-500 dark:text-slate-400 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
               title="Generate new workout"
             >
               <RefreshCw className="h-5 w-5" />
@@ -1351,43 +1350,54 @@ interface UserProfile {
                       )}
                     </div>
                   ) : (
-                    <>
-                      <p className="font-semibold text-sm sm:text-base text-slate-700 dark:text-slate-200 mb-1 sm:mb-2">{dayName}</p>
-                      {dayAssignment?.type === 'workout' && dayAssignment.workoutDetails ? (
-                        <div
-                          className="w-full text-center p-1 sm:p-2 rounded bg-blue-100 dark:bg-blue-800/50 text-blue-700 dark:text-blue-300 text-xs sm:text-sm flex flex-col items-center cursor-pointer hover:ring-2 hover:ring-blue-400 dark:hover:ring-blue-500"
-                          onClick={(e) => {
+                    <div className="flex flex-col justify-between h-full">
+                      <div className="flex items-center gap-3 mb-2">
+                        {dayAssignment && (dayAssignment.image || dayAssignment.imageUrl) ? (
+                          <div className="w-16 h-16 md:w-full md:aspect-square rounded-lg overflow-hidden flex-shrink-0 mb-0 md:mb-3">
+                            <Image
+                              src={dayAssignment.image || dayAssignment.imageUrl}
+                              alt={dayAssignment.title || 'Workout image'}
+                              fill
+                              sizes="64px, (min-width: 768px) 100vw, 220px"
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-16 h-16 md:w-full md:aspect-square bg-slate-200 dark:bg-slate-700 flex items-center justify-center rounded-lg overflow-hidden flex-shrink-0 mb-0 md:mb-3">
+                            <ImageIcon className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0 flex flex-col justify-center md:items-center md:text-center">
+                          <span className="font-semibold text-slate-700 dark:text-slate-200 mb-1 md:mb-2">{dayName}</span>
+                          {dayAssignment ? (
+                            <>
+                              <span className="font-medium text-primary dark:text-orange-400 truncate">
+                                {dayAssignment.title}
+                              </span>
+                              <span className="text-xs text-muted-foreground dark:text-slate-400">
+                                {dayAssignment.duration || 'Duration not set'}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground dark:text-slate-400 flex items-center gap-1 text-sm">
+                              <PlusCircle className="h-4 w-4" /> Assign
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {/* Edit icon for desktop */}
+                      {dayAssignment && (
+                        <button
+                          className="hidden md:block absolute top-2 right-2 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200"
+                          onClick={e => {
                             e.stopPropagation();
-                            if (dayAssignment?.type === 'workout' && dayAssignment.workoutDetails?.planId && user?.uid) {
-                              router.push(`/workout/${user.uid}/${dayAssignment.workoutDetails.planId}`);
-                            }
+                            setDayIndexForWorkoutEdit(index);
                           }}
-                          draggable={true}
-                          onDragStart={(e) => dayAssignment.workoutDetails && handleDragStart(e, dayAssignment.workoutDetails)}
                         >
-                          {dayAssignment.workoutDetails.imageUrl && 
-                            <Image src={dayAssignment.workoutDetails.imageUrl} alt="Workout" width={80} height={60} className="rounded object-cover mb-1 h-12 sm:h-16 w-full pointer-events-none" />
-                          }
-                          <span className="font-medium block truncate w-full pointer-events-none" title={dayAssignment.workoutDetails.title}>{dayAssignment.workoutDetails.title}</span>
-                          <span className="text-xs text-blue-600 dark:text-blue-400 pointer-events-none">{dayAssignment.workoutDetails.duration}</span>
-                        </div>
-                      ) : dayAssignment?.type === 'rest' ? (
-                        <div className="text-center pointer-events-none">
-                          <Coffee size={24} className="text-green-500 dark:text-green-400 mx-auto mb-1" />
-                          <p className="text-xs sm:text-sm text-green-600 dark:text-green-300">Rest Day</p>
-                        </div>
-                      ) : dayAssignment?.type === 'stretch' ? (
-                        <div className="text-center pointer-events-none">
-                          <Repeat size={24} className="text-yellow-500 dark:text-yellow-400 mx-auto mb-1" />
-                          <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-300">Stretch Day</p>
-                        </div>
-                      ) : (
-                        <div className="text-center pointer-events-none">
-                          <PlusCircle size={24} className="text-slate-400 dark:text-slate-500 mx-auto mb-1" />
-                          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Assign</p>
-                        </div>
+                          <Pencil className="h-4 w-4" />
+                        </button>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
               );
@@ -1515,7 +1525,7 @@ interface UserProfile {
                         onClick={() => setIsModalOpen(true)}
                         className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                       >
-                        <Repeat className="h-5 w-5" />
+                        <RefreshCw className="h-5 w-5" />
                       </Button>
                     </div>
                     

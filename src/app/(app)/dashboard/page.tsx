@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label"
 // import { Checkbox } from "@/components/ui/checkbox"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"; 
 import Link from 'next/link'; 
-import { Loader2, Edit3, PlusCircle, Coffee, Repeat, Zap, CalendarPlus, Trash2, ImageIcon, XCircle, Eye, RefreshCw } from "lucide-react"; // Added RefreshCw icon
+import { Bed, CalendarPlus, Coffee, Edit3, Eye, ImageIcon, Loader2, Pencil, PlusCircle, RefreshCw, Repeat, StretchHorizontal, Trash2, XCircle, Zap } from "lucide-react"; // Added RefreshCw icon
 import { Pencil } from "lucide-react";
 
 const IMAGE_POOL_SIZE = 35
@@ -1207,7 +1207,7 @@ interface UserProfile {
                         />
                       </div>
                     ) : (
-                      <div className="w-20 h-20 bg-slate-200 dark:bg-slate-700 flex items-center justify-center rounded-lg flex-shrink-0">
+                      <div className="w-20 h-20 bg-slate-200 dark:bg-slate700 flex items-center justify-center rounded-lg flex-shrink-0">
                         <ImageIcon className="h-10 w-10 text-slate-400 dark:text-slate-500" />
                       </div>
                     )}
@@ -1345,11 +1345,11 @@ interface UserProfile {
                   ) : (
                     <div className="flex flex-col justify-between h-full">
                       <div className="flex items-center gap-3 mb-2">
-                        {dayAssignment && (dayAssignment.image || dayAssignment.imageUrl) ? (
+                        {dayAssignment?.type === 'workout' && dayAssignment.workoutDetails && (dayAssignment.workoutDetails.image || dayAssignment.workoutDetails.imageUrl) ? (
                           <div className="w-16 h-16 md:w-full md:aspect-square rounded-lg overflow-hidden flex-shrink-0 mb-0 md:mb-3">
                             <Image
-                              src={dayAssignment.image || dayAssignment.imageUrl}
-                              alt={dayAssignment.title || 'Workout image'}
+                              src={dayAssignment.workoutDetails.image || dayAssignment.workoutDetails.imageUrl!}
+                              alt={dayAssignment.workoutDetails.title || 'Workout image'}
                               fill
                               sizes="64px, (min-width: 768px) 100vw, 220px"
                               className="object-cover"
@@ -1660,7 +1660,7 @@ interface UserProfile {
                       {workoutDuration < 60
                         ? `${workoutDuration} minutes`
                         : `${Math.floor(workoutDuration / 60)} hour${Math.floor(workoutDuration / 60) > 1 ? 's' : ''}${workoutDuration % 60 !== 0 ? `, ${workoutDuration % 60} minutes` : ''}`}
-                    </span>
+                    </div>
                   </div>
                 </div>
                 

@@ -1,11 +1,12 @@
 // src/lib/firebase-admin.ts
 import { initializeApp, getApps, cert, ServiceAccount } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 
 let isInitialized = false;
 
 // Initialize Firebase Admin SDK only when needed and at runtime
-function initializeFirebaseAdmin() {
+export function initializeAdminApp() {
   // Only run at runtime, not during build
   if (typeof window !== 'undefined') return; // Client-side guard
   if (isInitialized) return; // Already initialized guard
@@ -45,7 +46,7 @@ export const getAdminDB = () => {
   
   try {
     // Initialize if needed
-    initializeFirebaseAdmin();
+    initializeAdminApp();
     
     // Return firestore instance if available
     return getApps().length > 0 ? getFirestore() : null;
@@ -54,6 +55,18 @@ export const getAdminDB = () => {
     return null;
   }
 };
+
+export const getAdminAuth = () => {
+  if (typeof window !== 'undefined') return null;
+
+  try {
+    initializeAdminApp();
+    return getApps().length > 0 ? getAuth() : null;
+  } catch (error) {
+    console.warn('Firebase Admin not initialized, returning null for adminAuth:', error);
+    return null;
+  }
+}
 
 // Legacy export for backward compatibility (but this will be null at build time)
 export const adminDB = null;

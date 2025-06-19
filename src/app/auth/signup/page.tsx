@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import {
   getAuth,
   createUserWithEmailAndPassword,
+  signInWithEmailAndPassword, // Add this import
   signInWithPopup,
   GoogleAuthProvider,
 } from "firebase/auth"
@@ -72,75 +73,131 @@ export default function SignUpPage() {
 
   const auth = getAuth(app)
 
-const handleSignUp = async () => {
-  if (password !== confirmPassword) {
-    return setError("Passwords do not match")
-  }
-
-  setLoading(true)
-  try {
-    if (!app) {
-      throw new Error("Firebase app not initialized");
+  const handleSignUp = async () => {
+    if (password !== confirmPassword) {
+      return setError("Passwords do not match");
     }
-    const auth = getAuth(app)
-    const userCred = await createUserWithEmailAndPassword(auth, email, password)
-    const user = userCred.user
+    setLoading(true);
+    setError("");
 
-    const db = getFirestore(app)
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      email: user.email,
-      createdAt: serverTimestamp(),
-      profile: {
-        plan: 'free',           // Initialize with free plan
-        workoutsGenerated: 0,   // Initialize workout counter
-      },
-    })
+    // Step 1: Check for a soft-deleted account and try to reactivate
+    try {
+      const reactivateResponse = await fetch('/api/user/check-and-reactivate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
 
-    router.push("/profile")
-  } catch (err: unknown) {
-    const error = err as FirebaseAuthError
-    setError(getAuthErrorMessage(error))
-  } finally {
-    setLoading(false)
-  }
-}
+      if (reactivateResponse.ok) {
+        // Account was reactivated. Now, sign the user in.
+        await signInWithEmailAndPassword(auth, email, password);
+        router.push("/profile");
+        return; // Stop execution
+      }
 
+      if (reactivateResponse.status === 409) {
+          // User exists and is active
+          setError("An account with this email already exists. Please sign in.");
+          setLoading(false);
+          return;
+      }
 
-const handleGoogle = async () => {
-  setLoading(true)
-  setError("") // Clear any previous errors
-  try {
-    if (!app) {
-      throw new Error("Firebase app not initialized");
+      // If status is 404 (Not Found), proceed to create a new account
+      if (reactivateResponse.status !== 404) {
+          const { error } = await reactivateResponse.json();
+          throw new Error(error || "An unexpected error occurred during reactivation check.");
+      }
+
+    } catch (err: any) {
+        // This catches network errors or issues with the reactivation API call itself
+        setError(err.message);
+        setLoading(false);
+        return;
     }
-    const provider = new GoogleAuthProvider()
-    provider.addScope('email')
-    provider.addScope('profile')
-    
-    const userCred = await signInWithPopup(auth, provider)
-    const user = userCred.user
 
-    // Save to Firestore (merge with existing data if any)
-    const db = getFirestore(app)
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      email: user.email,
-      createdAt: serverTimestamp(),
-      profile: {
-        plan: 'free',           // Initialize with free plan
-        workoutsGenerated: 0,   // Initialize workout counter
-      },
-    }, { merge: true }) // Use merge to avoid overwriting existing data
-    
-    router.push("/profile")
-  } catch (err: unknown) {
-    const error = err as FirebaseAuthError
-    setError(getAuthErrorMessage(error))
-  } finally {
-    setLoading(false)
-  }
-}
+    // Step 2: If not reactivated, create a new account
+    try {
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCred.user;
+
+      const db = getFirestore(app);
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        createdAt: serverTimestamp(),
+        profile: {
+          plan: 'free',
+          workoutsGenerated: 0,
+        },
+      });
+
+      router.push("/profile");
+    } catch (err: unknown) {
+      const error = err as FirebaseAuthError;
+      // Firebase might throw 'auth/email-already-in-use' here if our check failed,
+      // which is a good fallback.
+      setError(getAuthErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleGoogle = async () => {
+    setLoading(true);
+    setError(""); // Clear any previous errors
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.addScope('email');
+      provider.addScope('profile');
+      
+      const userCred = await signInWithPopup(auth, provider);
+      const user = userCred.user;
+      const userEmail = user.email;
+
+      if (!userEmail) {
+          throw new Error("Could not retrieve email from Google account.");
+      }
+
+      // Check for soft-deleted account and reactivate if needed
+      const reactivateResponse = await fetch('/api/user/check-and-reactivate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userEmail }),
+      });
+
+      if (reactivateResponse.ok || reactivateResponse.status === 409) {
+          // If reactivated (200) or already active (409), just proceed to profile
+          router.push("/profile");
+          return;
+      }
+
+      // If 404 (Not Found), create the user document
+      if (reactivateResponse.status === 404) {
+          const db = getFirestore(app);
+          await setDoc(doc(db, "users", user.uid), {
+              uid: user.uid,
+              email: user.email,
+              createdAt: serverTimestamp(),
+              profile: {
+                  plan: 'free',
+                  workoutsGenerated: 0,
+              },
+          }, { merge: true }); // Use merge to avoid overwriting existing data
+          router.push("/profile");
+          return;
+      }
+      
+      const { error } = await reactivateResponse.json();
+      throw new Error(error || "An unexpected error occurred.");
+
+    } catch (err: any) {
+      const error = err as FirebaseAuthError;
+      setError(getAuthErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 py-12">

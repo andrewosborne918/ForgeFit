@@ -74,6 +74,10 @@ export default function AnalyticsPage() {
     if (!user?.uid) return;
 
     const fetchData = async () => {
+      if (!app) {
+        // Optionally, you can show an error message or handle this case as needed
+        return;
+      }
       const db = getFirestore(app);
       const logsRef = collection(db, `users/${user.uid}/logs`);
       const q = query(logsRef, orderBy("timestamp", "asc"));

@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppContext } from "@/context/AppContext";
 import { getFirestore, collection, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
-import { app, isFirebaseConfigured } from "@/lib/firebase";
+import { app } from "@/lib/firebase";
 import Calendar from 'react-calendar';
 import '@/styles/calendar.css';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
@@ -64,9 +63,8 @@ const isSameDay = (date1: Date, date2: Date) =>
 
 export default function AnalyticsPage() {
   const { user } = useAppContext();
-  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
-  const [stats, setStats] = useState<UserStats>({ totalWorkouts: 0, totalTimeExercised: 0, totalActiveDays: 0, consistencyStreak: 0 });
   const [activeDates, setActiveDates] = useState<Date[]>([]);
+  const [stats, setStats] = useState<UserStats>({ totalWorkouts: 0, totalTimeExercised: 0, totalActiveDays: 0, consistencyStreak: 0 });
   const [weeklyData, setWeeklyData] = useState<WeeklyChartDataPoint[]>([]);
   const [muscleGroupData, setMuscleGroupData] = useState<MuscleGroupChartDataPoint[]>([]);
   const [exerciseVolumeData, setExerciseVolumeData] = useState<ExerciseVolumeDataPoint[]>([]);
@@ -85,14 +83,12 @@ export default function AnalyticsPage() {
         timestamp: doc.data().timestamp,
         plan: doc.data().plan,
       }));
-      setWorkoutLogs(logs);
 
       const dates = logs.map(log => log.timestamp.toDate());
       setActiveDates(dates);
 
-      // Stats
       const totalWorkouts = logs.length;
-      const totalTimeExercised = logs.reduce((sum, log) => sum + parseInt(log.plan?.duration.split(" ")[0] || "0"), 0);
+      const totalTimeExercised = logs.reduce((sum, log) => sum + (parseInt(String(log.plan?.duration || '0').split(' ')[0], 10) || 0), 0);
       const uniqueDays = new Set(dates.map(d => d.toDateString()));
       const totalActiveDays = uniqueDays.size;
 
@@ -113,7 +109,6 @@ export default function AnalyticsPage() {
       }
       setStats({ totalWorkouts, totalTimeExercised, totalActiveDays, consistencyStreak: maxStreak });
 
-      // Weekly Data
       const weeklyMap: Record<string, WeeklyChartDataPoint> = {};
       logs.forEach(log => {
         const date = log.timestamp.toDate();
@@ -121,11 +116,10 @@ export default function AnalyticsPage() {
         const week = `${year}-W${Math.ceil((((date.getTime() - new Date(year, 0, 1).getTime()) / 86400000 + new Date(year, 0, 1).getDay() + 1) / 7))}`;
         if (!weeklyMap[week]) weeklyMap[week] = { week, workouts: 0, time: 0 };
         weeklyMap[week].workouts++;
-        weeklyMap[week].time += parseInt(log.plan?.duration.split(" ")[0] || "0");
+        weeklyMap[week].time += (parseInt(String(log.plan?.duration || '0').split(' ')[0], 10) || 0);
       });
       setWeeklyData(Object.values(weeklyMap).sort((a, b) => a.week.localeCompare(b.week)));
 
-      // Muscle Groups
       const muscleMap: Record<string, number> = {};
       const exerciseMap: Record<string, number> = {};
       const dayCounts = new Array(7).fill(0);
@@ -144,11 +138,12 @@ export default function AnalyticsPage() {
         });
       });
 
-      setMuscleGroupData(Object.entries(muscleMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value));
+      const muscleGroupArray = Object.entries(muscleMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+      setMuscleGroupData(muscleGroupArray);
       setExerciseVolumeData(Object.entries(exerciseMap).map(([name, volume]) => ({ name, volume })).sort((a, b) => b.volume - a.volume).slice(0, 10));
       const favoriteDayIndex = dayCounts.indexOf(Math.max(...dayCounts));
       const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-      setInsights({ mostTrainedMuscleGroup: muscleGroupData[0]?.name || "N/A", favoriteWorkoutDay: days[favoriteDayIndex] });
+      setInsights({ mostTrainedMuscleGroup: muscleGroupArray[0]?.name || "N/A", favoriteWorkoutDay: days[favoriteDayIndex] });
     };
 
     fetchData();

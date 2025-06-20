@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { app } from '@/lib/firebase';
+import { app, isFirebaseConfigured } from '@/lib/firebase';
 import { getFirestore, setDoc, doc, collection, query, orderBy, getDocs, deleteDoc, getDoc, writeBatch } from 'firebase/firestore';
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
 import { CalendarPlus, ImageIcon, Loader2, Zap } from "lucide-react";
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const IMAGE_POOL_SIZE = 35;
 
@@ -136,9 +137,86 @@ function DashboardPageContent() {
     setIsAssignWorkoutModalOpen(true);
   }
 
-  // ----------- All useEffects and handlers copied as-is -------------
-  // For brevity, I'm omitting them here as they're identical to your latest code block.
-  // (Copy from the previous code you posted for all useEffects, handler functions, generatePlan, etc.)
+  // ----------- Fetch user data on mount -------------
+  useEffect(() => {
+    if (!app || !isFirebaseConfigured) {
+      console.error('Firebase is not properly configured');
+      return;
+    }
+
+    const fetchUserData = async () => {
+      try {
+        if (!user) return;
+        
+        // Fetch completed workouts
+        const db = getFirestore(); // Using default app
+        const workoutsQuery = query(
+          collection(db, `users/${user.uid}/completedWorkouts`),
+          orderBy('timestamp', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(workoutsQuery);
+        const plans = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            plan: data.plan as WorkoutPlan | undefined,
+            image: data.image as string | undefined,
+            timestamp: data.timestamp?.toDate(),
+            createdAt: data.createdAt as string | undefined
+          };
+        });
+        
+        setCompletedPlans(plans);
+        
+        // Set the most recent workout as current if none is set
+        if (plans.length > 0 && plans[0].plan && !currentWorkout) {
+          setCurrentWorkout(plans[0].plan);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, [user, currentWorkout]);
+
+  // Handle generating a new workout plan
+  const handleGeneratePlan = async () => {
+    if (!user) return;
+    
+    setGenerating(true);
+    setLoadingMessage(getRandomLoadingMessage());
+    
+    try {
+      // Your existing generate plan logic here
+      // This is a placeholder - replace with your actual implementation
+      const response = await fetch('/api/generate-workout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          duration: workoutDuration,
+          type: workoutType,
+          targetMuscles,
+          equipment: [...selectedEquipment, ...(otherEquipment ? [otherEquipment] : [])],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate workout');
+      }
+
+      const newPlan = await response.json() as WorkoutPlan;
+      setCurrentWorkout(newPlan);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error generating workout:', error);
+      // Handle error appropriately
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   // ----------- UI COMPONENTS BELOW -------------
 
@@ -328,12 +406,29 @@ function DashboardLoading() {
   );
 }
 
-// Main export with Suspense
+// Main export with Suspense and ErrorBoundary
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<DashboardLoading />}>
-      <DashboardPageContent />
-    </Suspense>
+    <ErrorBoundary 
+      fallback={
+        <div className="flex items-center justify-center min-h-screen p-4">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Something went wrong</h2>
+            <p className="mb-4">We're having trouble loading the dashboard. Please try refreshing the page.</p>
+            <Button 
+              onClick={() => window.location.reload()}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+            >
+              Refresh Page
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <Suspense fallback={<DashboardLoading />}>
+        <DashboardPageContent />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 function formatDuration(planDurationValue: number) {

@@ -120,6 +120,10 @@ export default function SignUpPage() {
       const userCred = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCred.user;
 
+      if (!app) {
+        throw new Error('Firebase app is not initialized');
+      }
+      
       const db = getFirestore(app);
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
@@ -174,6 +178,10 @@ export default function SignUpPage() {
 
       // If 404 (Not Found), create the user document
       if (reactivateResponse.status === 404) {
+          if (!app) {
+            throw new Error('Firebase app is not initialized');
+          }
+          
           const db = getFirestore(app);
           await setDoc(doc(db, "users", user.uid), {
               uid: user.uid,

@@ -1,17 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
-export default function SuccessPage() {
+// Client component that uses useSearchParams
+function SuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams?.get('session_id');
   const success = searchParams?.get('success');
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     if (sessionId || success) {
       // Redirect to dashboard with success parameter
       const redirectUrl = new URL('/dashboard', window.location.origin);
@@ -61,5 +64,18 @@ export default function SuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main page component with Suspense
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 }

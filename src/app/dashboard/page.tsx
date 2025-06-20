@@ -85,19 +85,29 @@ function getNextWorkoutImage(gender: string): string {
 
 // ------------- Dashboard Page -------------
 function DashboardPageContent() {
-  const { user, userProfile, setUserProfile, loading: authLoading } = useAppContext();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [completedPlans, setCompletedPlans] = useState<CompletedPlan[]>([]);
-  const [planToDelete, setPlanToDelete] = useState<string | null>(null);
-  const [generatePlanCardImage, setGeneratePlanCardImage] = useState<string | null>(null);
-  const [currentWorkout, setCurrentWorkout] = useState<WorkoutPlan | null>(null);
-  const [workoutDuration, setWorkoutDuration] = useState(45);
-  const [workoutType, setWorkoutType] = useState("fullBody");
-  const initialTargetMuscles = {
+  console.log('Rendering DashboardPageContent');
+  const [error, setError] = useState<string | null>(null);
+  
+  try {
+    const { user, userProfile, setUserProfile, loading: authLoading } = useAppContext();
+    console.log('Auth state in DashboardPageContent:', { 
+      user: user ? { uid: user.uid, email: user.email } : null, 
+      userProfile: userProfile ? 'loaded' : 'not loaded',
+      authLoading 
+    });
+    
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [generating, setGenerating] = useState(false);
+    const [completedPlans, setCompletedPlans] = useState<CompletedPlan[]>([]);
+    const [planToDelete, setPlanToDelete] = useState<string | null>(null);
+    const [generatePlanCardImage, setGeneratePlanCardImage] = useState<string | null>(null);
+    const [currentWorkout, setCurrentWorkout] = useState<WorkoutPlan | null>(null);
+    const [workoutDuration, setWorkoutDuration] = useState(45);
+    const [workoutType, setWorkoutType] = useState("fullBody");
+    const initialTargetMuscles = {
     upperBody: [] as string[],
     core: [] as string[],
     lowerBody: [] as string[],
@@ -166,17 +176,6 @@ function DashboardPageContent() {
       return;
     }
 
-    const fetchUserData = async () => {
-      try {
-        if (!user) return;
-        
-        // Fetch completed workouts
-        const db = getFirestore(); // Using default app
-        const workoutsQuery = query(
-          collection(db, `users/${user.uid}/completedWorkouts`),
-          orderBy('timestamp', 'desc')
-        );
-        
         const querySnapshot = await getDocs(workoutsQuery);
         const plans = querySnapshot.docs.map(doc => {
           const data = doc.data();
@@ -431,36 +430,75 @@ function DashboardLoading() {
 // Main export with Suspense and ErrorBoundary
 export default function DashboardPage() {
   const [showSuccess, setShowSuccess] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Handle success message from URL params
+  useEffect(() => {
+    console.log('Dashboard mounted, checking URL params...');
+    if (searchParams?.get('success') === 'true') {
+      console.log('Showing success message from URL params');
+      setShowSuccess(true);
+      // Clear the success param without reloading
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('success');
+      window.history.replaceState({}, '', newUrl.toString());
+      
+      // Hide success message after 5 seconds
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
+  // Handle auth state changes
+  const { user, loading: authLoading } = useAppContext();
+  
+  useEffect(() => {
+    console.log('Auth state in DashboardPage:', { user, authLoading });
+    if (!authLoading && !user) {
+      console.log('No user found, redirecting to signin');
+      router.push('/auth/signin');
+    }
+  }, [user, authLoading, router]);
+
+  if (authLoading) {
+    return <DashboardLoading />;
+  }
   
   return (
-    <ErrorBoundary 
-      fallback={
-        <div className="flex items-center justify-center min-h-screen p-4">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Something went wrong</h2>
-            <p className="mb-4">We're having trouble loading the dashboard. Please try refreshing the page.</p>
-            <Button 
-              onClick={() => window.location.reload()}
-              className="bg-orange-500 hover:bg-orange-600 text-white"
-            >
-              Refresh Page
-            </Button>
-          </div>
-        </div>
-      }
-    >
-      <Suspense fallback={<DashboardLoading />}>
-        {showSuccess && (
-          <div className="fixed top-4 right-4 z-50">
-            <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
-              <CheckCircle2 className="h-6 w-6 mr-2" />
-              <span>Payment successful! Your subscription is now active. 🎉</span>
+    <div className="min-h-screen bg-background">
+      <ErrorBoundary 
+        fallback={
+          <div className="flex items-center justify-center min-h-screen p-4">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Something went wrong</h2>
+              <p className="mb-4">We're having trouble loading the dashboard. Please try refreshing the page.</p>
+              <Button 
+                onClick={() => window.location.reload()}
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                Refresh Page
+              </Button>
             </div>
           </div>
-        )}
-        <DashboardPageContent />
-      </Suspense>
-    </ErrorBoundary>
+        }
+      >
+        <Suspense fallback={<DashboardLoading />}>
+          {showSuccess && (
+            <div className="fixed top-4 right-4 z-50 animate-fade-in">
+              <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
+                <CheckCircle2 className="h-6 w-6 mr-2" />
+                <span>Payment successful! Your subscription is now active. 🎉</span>
+              </div>
+            </div>
+          )}
+          <DashboardPageContent />
+        </Suspense>
+      </ErrorBoundary>
+    </div>
   );
 }
 function formatDuration(planDurationValue: number) {

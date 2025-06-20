@@ -1,79 +1,74 @@
 // src/app/marketing/page.tsx
-"use client"
+"use client";
 
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Sparkles, Cpu, Users, TrendingUp, CheckCircle2, Zap, Target } from "lucide-react"
-import { motion } from "framer-motion"
-import { MarketingNavbar } from "@/components/MarketingNavbar" // Added MarketingNavbar import
-import { Logo } from "@/components/Logo"
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, Users, Zap, Sparkles } from "lucide-react";
+import { motion, Variants } from "framer-motion";
+import { MarketingNavbar } from "@/components/MarketingNavbar";
+import { Logo } from "@/components/Logo";
+import { HOW_IT_WORKS, BENEFITS } from "./constants";
+import { Section } from "./components/Section";
+import { Card } from "./components/Card";
+import { BenefitItem } from "./components/BenefitItem";
+import { ANIMATION } from "@/lib/animations";
 
-// Animation variants for sections and items
-const sectionVariants = {
-  hidden: { opacity: 0, y: 50 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-}
-
-const cardHoverVariants = {
-  hover: { scale: 1.03, y: -5, transition: { duration: 0.2 } }, // Adjusted hover effect
-  tap: { scale: 0.98 },
-}
-
-const staggeredContainerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15, // Adjusted stagger speed
-      delayChildren: 0.2,
-    },
-  },
-};
+// Animation variants
+const sectionVariants: Variants = ANIMATION.SECTION;
+const itemVariants: Variants = ANIMATION.ITEM;
+const staggeredContainerVariants: Variants = ANIMATION.STAGGER;
 
 export default function MarketingPage() {
   return (
     <div className="text-slate-800 dark:text-slate-200 scroll-smooth min-h-screen">
       <MarketingNavbar />
+      
       {/* Hero Section */}
-      <section
-        className="relative min-h-screen flex items-center justify-center text-center bg-fixed bg-center bg-cover" // Removed pt-[60px] and -mt-[60px]
+      <section 
+        className="relative min-h-screen flex items-center justify-center text-center bg-fixed bg-center bg-cover"
         style={{ backgroundImage: 'url(/images/forge_gym2.jpg)' }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
         <motion.div
-          className="z-10 px-4 sm:px-6 max-w-3xl mx-auto pt-[60px]" // Add padding only to content, not section
+          className="z-10 px-4 sm:px-6 max-w-3xl mx-auto pt-[60px]"
           initial="hidden"
           animate="visible"
           variants={{
             hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.8, delay: 0.3 } },
+            visible: { 
+              opacity: 1, 
+              y: 0, 
+              transition: { 
+                duration: 0.8, 
+                delay: 0.3 
+              } 
+            },
           }}
         >
           <motion.h1
             className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight"
-            variants={itemVariants}
+            variants={ANIMATION.ITEM}
           >
             Forge Your Best Body <span className="text-orange-500">with AI-Crafted Workouts</span>
           </motion.h1>
           <motion.p
             className="text-slate-200 mt-6 text-lg md:text-xl max-w-xl mx-auto"
-            variants={itemVariants}
+            variants={ANIMATION.ITEM}
           >
-            Generate up to <span className="font-bold text-orange-400">3 free workouts</span> — no credit card required. Personalized plans in seconds. Stop guessing, start forging.
+            Generate up to <span className="font-bold text-orange-400">3 free workouts</span> — no credit card required. 
+            Personalized plans in seconds. Stop guessing, start forging.
           </motion.p>
           <motion.div
             className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4"
-            variants={staggeredContainerVariants}
+            variants={ANIMATION.STAGGER}
           >
-            <motion.div variants={itemVariants}>
+            <motion.div variants={ANIMATION.ITEM}>
               <Link href="/auth/signup">
-                <Button size="lg" className="px-8 py-3 text-lg font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-xs">
+                <Button 
+                  size="lg" 
+                  className="px-8 py-3 text-lg font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-xs"
+                >
                   Generate Free Workouts
                 </Button>
               </Link>
@@ -83,84 +78,49 @@ export default function MarketingPage() {
       </section>
 
       {/* How It Works Section */}
-      <motion.section
-        id="how-it-works" // Added ID for navigation
-        className="py-16 sm:py-24 bg-slate-50 dark:bg-slate-900 text-center px-4 sm:px-6"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
-        variants={sectionVariants}
+      <Section 
+        id="how-it-works"
+        title="How It Works"
+        subtitle="Get started on your fitness journey with ForgeFit in three simple steps."
+        className="bg-slate-50 dark:bg-slate-900"
       >
-        <h2 className="text-3xl sm:text-4xl font-bold mb-5 text-slate-900 dark:text-white">How It Works</h2>
-        <p className="text-muted-foreground dark:text-slate-400 mb-12 sm:mb-16 text-lg max-w-2xl mx-auto">
-          Get started on your fitness journey with ForgeFit in three simple steps.
-        </p>
-        <motion.div
+        <motion.div 
           className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto"
-          variants={staggeredContainerVariants}
+          variants={ANIMATION.STAGGER}
         >
-          {[ // Updated content and icons
-            { icon: Target, step: "1", title: "Tell us your goals", desc: "Share your fitness objectives, preferred schedule, and any equipment you have available to you." },
-            { icon: Cpu, step: "2", title: "AI creates your workouts", desc: "Our intelligent system instantly crafts a personalized workout plan tailored specifically for you." },
-            { icon: TrendingUp, step: "3", title: "Track progress & stay consistent", desc: "Follow your plan, log your workouts, monitor your progress, and watch as your plan adapts with you." }
-          ].map(({ icon: Icon, step, title, desc }) => (
-            <motion.div
-              key={step}
-              className="p-6 sm:p-8 bg-white dark:bg-slate-800 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300"
-              variants={itemVariants}
-              whileHover={cardHoverVariants.hover}
-              whileTap={cardHoverVariants.tap}
-            >
-              <div className="flex justify-center mb-4">
-                <div className="p-3 bg-primary/10 dark:bg-primary/20 rounded-full">
-                  <Icon className="h-8 w-8 text-primary" />
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-primary mb-3">{step}</p>
-              <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">{title}</h3>
-              <p className="text-sm text-muted-foreground dark:text-slate-400 leading-relaxed">{desc}</p>
-            </motion.div>
+          {HOW_IT_WORKS.map((item, index) => (
+            <Card
+              key={index}
+              icon={item.icon}
+              title={item.title}
+              description={item.description}
+              step={item.step}
+            />
           ))}
         </motion.div>
-      </motion.section>
+      </Section>
 
       {/* Why Choose ForgeFit Section */}
-      <motion.section
-        id="features" // Changed ID to features for navigation
-        className="bg-slate-900 dark:bg-black text-white py-16 sm:py-24 px-4 sm:px-6"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
-        variants={sectionVariants}
+      {/* Why Choose ForgeFit Section */}
+      <Section 
+        id="features"
+        title="Why Choose ForgeFit?"
+        className="bg-slate-900 dark:bg-black text-white"
       >
-        <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 sm:mb-16">Why Choose ForgeFit?</h2>
-        <motion.ul
-          className="max-w-2xl mx-auto space-y-8" // Changed to ul and adjusted layout
-          variants={staggeredContainerVariants}
+        <motion.ul 
+          className="max-w-2xl mx-auto space-y-8"
+          variants={ANIMATION.STAGGER}
         >
-          {[
-            { icon: Users, title: "Built for Busy People", desc: "Flexible plans that adapt to your schedule, no matter how packed. Fitness that fits your life." },
-            { icon: Zap, title: "AI-Powered Precision", desc: "Leveraging Google Gemini for smarter, more adaptive, and effective workout plans." },
-            { icon: Sparkles, title: "Progressive & Adaptive", desc: "Each new plan is uniquely generated using your preferences — keeping your workouts fresh, challenging, and never repetitive." }
-          ].map(({ icon: Icon, title, desc }) => (
-            <motion.li
-              key={title}
-              className="flex items-start gap-4 p-6 bg-slate-800 dark:bg-slate-800/50 rounded-lg shadow-md hover:bg-slate-700/80 transition-colors duration-300" // List item styling
-              variants={itemVariants}
-              whileHover={cardHoverVariants.hover}
-              whileTap={cardHoverVariants.tap}
-            >
-              <div className="flex-shrink-0 p-2 bg-primary/20 rounded-full mt-1">
-                <Icon className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-1 text-white">{title}</h3>
-                <p className="text-sm text-slate-300 leading-relaxed">{desc}</p>
-              </div>
-            </motion.li>
+          {BENEFITS.map((benefit, index) => (
+            <BenefitItem 
+              key={index}
+              icon={benefit.icon}
+              title={benefit.title}
+              description={benefit.description}
+            />
           ))}
         </motion.ul>
-      </motion.section>
+      </Section>
 
       {/* Powerful Features Section (Combined with previous Features) */}
       <motion.section
@@ -309,7 +269,7 @@ export default function MarketingPage() {
               key={i}
               className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-xl shadow-xl flex flex-col items-center text-center h-full hover:shadow-2xl transition-shadow duration-300"
               variants={itemVariants}
-              whileHover={cardHoverVariants.hover}
+              whileHover={ANIMATION.CARD.hover}
             >
               {/* Placeholder for avatar image - assuming you might add these later */}
               {/* <Image src={`/images/avatars/avatar${i+1}.png`} alt={user} width={70} height={70} className="rounded-full mb-5 border-2 border-primary shadow-sm" /> */}

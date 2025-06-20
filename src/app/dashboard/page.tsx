@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
-import { CalendarPlus, ImageIcon, Loader2, Zap } from "lucide-react";
+import { CalendarPlus, CheckCircle2, ImageIcon, Loader2, Zap } from "lucide-react";
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const IMAGE_POOL_SIZE = 35;
@@ -89,6 +89,7 @@ function DashboardPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [completedPlans, setCompletedPlans] = useState<CompletedPlan[]>([]);
   const [planToDelete, setPlanToDelete] = useState<string | null>(null);
@@ -136,6 +137,27 @@ function DashboardPageContent() {
     });
     setIsAssignWorkoutModalOpen(true);
   }
+
+  // Handle success parameter from Stripe redirect
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const success = searchParams?.get('success');
+    if (success === 'true') {
+      setShowSuccess(true);
+      // Clear the success parameter from the URL without refreshing
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('success');
+      window.history.replaceState({}, '', newUrl.toString());
+      
+      // Hide success message after 5 seconds
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   // ----------- Fetch user data on mount -------------
   useEffect(() => {
@@ -408,6 +430,8 @@ function DashboardLoading() {
 
 // Main export with Suspense and ErrorBoundary
 export default function DashboardPage() {
+  const [showSuccess, setShowSuccess] = useState(false);
+  
   return (
     <ErrorBoundary 
       fallback={
@@ -426,6 +450,14 @@ export default function DashboardPage() {
       }
     >
       <Suspense fallback={<DashboardLoading />}>
+        {showSuccess && (
+          <div className="fixed top-4 right-4 z-50">
+            <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
+              <CheckCircle2 className="h-6 w-6 mr-2" />
+              <span>Payment successful! Your subscription is now active. 🎉</span>
+            </div>
+          </div>
+        )}
         <DashboardPageContent />
       </Suspense>
     </ErrorBoundary>

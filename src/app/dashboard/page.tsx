@@ -176,6 +176,15 @@ function DashboardPageContent() {
       return;
     }
 
+    const fetchUserData = async () => {
+      try {
+        if (!user?.uid) return;
+        
+        const workoutsQuery = query(
+          collection(getFirestore(), 'users', user.uid, 'workouts'), 
+          orderBy('timestamp', 'desc')
+        );
+        
         const querySnapshot = await getDocs(workoutsQuery);
         const plans = querySnapshot.docs.map(doc => {
           const data = doc.data();
@@ -200,6 +209,11 @@ function DashboardPageContent() {
     };
 
     fetchUserData();
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+      // Any cleanup code if needed
+    };
   }, [user, currentWorkout]);
 
   // Handle generating a new workout plan

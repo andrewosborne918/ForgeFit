@@ -18,6 +18,15 @@ export async function GET(request: Request) {
 
     // Get all users from Firestore
     const db = getAdminDB();
+    
+    if (!db) {
+      console.error('Firebase Admin not initialized');
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
+    
     const usersSnapshot = await db.collection("users").get();
     
     const users = usersSnapshot.docs.map(doc => ({
@@ -53,6 +62,14 @@ export async function POST(request: Request) {
 
     // Get Firestore admin
     const db = getAdminDB();
+    
+    if (!db) {
+      console.error('Firebase Admin not initialized');
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
     
     if (action === "update" && userId && userData) {
       // Update user data
